@@ -11,5 +11,7 @@ class MainWindow : public QMainWindow {
   MainWindow () ;
   ~MainWindow () ;
 
+  virtual QSize sizeHint () ;
+  virtual QSizePolicy sizePolicy () ;
 } ;
 

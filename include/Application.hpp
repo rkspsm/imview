@@ -4,6 +4,8 @@
 #include <QList>
 #include <QSharedPointer>
 
+#include <iostream>
+
 class Application : public QApplication {
 
   Q_OBJECT
@@ -35,6 +37,9 @@ class Application : public QApplication {
   class Context {
     public :
 
+    typedef QSharedPointer<Context> Ptr ;
+    typedef QList<Ptr> List ;
+
     QUuid id ;
     QDir dir ;
     ImageList image_list ;
@@ -43,15 +48,18 @@ class Application : public QApplication {
     ~Context () ;
   } ;
 
-  QList<QSharedPointer<Context>> all_contexts ;
-  QSharedPointer<Context> current_context ;
+  Context::List all_contexts ;
+  Context::Ptr current_context ;
 
   void dir_selected (const QDir & dir) ;
 
   signals:
-    void all_contexts_changed (QList<QSharedPointer<Context>> all_contexts) ;
-    void current_context_changed (QSharedPointer<Context> current_context) ;
+    void all_contexts_changed (Context::List all_contexts) ;
+    void current_context_changed (Context::Ptr current_context) ;
 } ;
 
-static Application* app ;
+#define app static_cast<Application*> (qApp)
+
+std::ostream& operator << (std::ostream & out, const QPoint x) ;
+std::ostream& operator << (std::ostream & out, const QPointF x) ;
 

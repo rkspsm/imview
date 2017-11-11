@@ -1,5 +1,6 @@
 #include "Application.hpp"
 #include "MainWindow.hpp"
+#include "GraphicsView.hpp"
 
 #include <iostream>
 #include <QWidget>
@@ -13,7 +14,8 @@ using std::endl ;
 MainWindow::~MainWindow () { }
 
 MainWindow::MainWindow () : QMainWindow (nullptr) {
-  setCentralWidget (new QWidget ()) ;
+  resize (sizeHint ()) ;
+  setCentralWidget (new GraphicsView (this)) ;
 
   auto fileMenu = menuBar ()->addMenu (tr("&File")) ;
 
@@ -32,5 +34,13 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
 
   auto quitAction = fileMenu->addAction (tr("&Quit")) ;
   connect (quitAction, &QAction::triggered, [] () { app->quit (); }) ;
+}
+
+QSize MainWindow::sizeHint () {
+  return QSize (1024, 768) ;
+}
+
+QSizePolicy MainWindow::sizePolicy () {
+  return QSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed) ;
 }
 

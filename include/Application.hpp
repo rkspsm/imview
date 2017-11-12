@@ -68,6 +68,7 @@ class Application : public QApplication {
   void drag (double x, double y) ;
 
   void on_resize () ;
+  void on_rotation (double value) ;
   void on_mirrorToggle () ;
   void on_nextImage () ;
   void on_prevImage () ;

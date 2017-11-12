@@ -71,6 +71,13 @@ GraphicsView::GraphicsView (QWidget* parent)
       }
     }) ;
 
+  connect (app, &Application::img_rotate,
+    [this] (double value) {
+      if (img_item) {
+        rotscale_item->setRotation (value) ;
+      }
+    }) ;
+
   connect (app, &Application::img_mirror,
     [this] (bool value) {
       if (img_item && img_mirrored_item) {
@@ -88,6 +95,7 @@ void GraphicsView::context_refresh (Application::Context::Ptr ctx) {
     scene->removeItem (img_item) ;
     img_item = nullptr ;
     rotscale_item->setScale (1) ;
+    rotscale_item->setRotation (0) ;
 
     if (img_mirrored_item) {
       scene->removeItem (img_mirrored_item) ;

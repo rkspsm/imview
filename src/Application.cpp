@@ -118,8 +118,8 @@ void Application::state_refreshed () {
     } else {
       emit img_locate (state->x, state->y) ;
     }
-    //emit img_rotate (state->rot) ;
-    //emit img_mirror (state->mirrored) ;
+    emit img_rotate (state->rot) ;
+    emit img_mirror (state->mirrored) ;
 
   }
 }
@@ -179,6 +179,13 @@ void Application::on_mirrorToggle () {
     bool & val = current_state->mirrored ;
     val = !val ;
     emit img_mirror (val) ;
+  }
+}
+
+void Application::on_rotation (double value) {
+  if (current_state) {
+    current_state->rot = value ;
+    emit img_rotate (value) ;
   }
 }
 

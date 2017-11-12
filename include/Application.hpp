@@ -65,14 +65,15 @@ class Application : public QApplication {
   void drag (double x, double y) ;
 
   void on_resize () ;
+  void on_mirrorToggle () ;
   void save_xy (double x, double y) ;
 
   signals:
     void all_contexts_changed (Context::List all_contexts) ;
     void current_context_changed (Context::Ptr current_context) ;
-    void img_translate (double dx, double dy, bool mirrored) ;
-    void img_rotate (double rotate, bool mirrored) ;
-    void img_scale (double scale, bool mirrored) ;
+    void img_translate (double dx, double dy) ;
+    void img_rotate (double rotate) ;
+    void img_scale (double scale) ;
     void img_mirror (bool value) ;
     void resized () ;
 } ;

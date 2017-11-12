@@ -13,6 +13,7 @@ GraphicsView::~GraphicsView () { }
 GraphicsView::GraphicsView (QWidget* parent)
     : QGraphicsView (parent)
     , img_item (nullptr)
+    , img_mirrored_item (nullptr)
     , rotscale_item (nullptr)
 {
 
@@ -43,18 +44,29 @@ GraphicsView::GraphicsView (QWidget* parent)
     this, &GraphicsView::context_refresh ) ;
 
   connect (app, &Application::img_translate,
-    [this] (double dx, double dy, bool mirrored) {
+    [this] (double dx, double dy) {
       if (img_item) {
         auto p1 = img_item->mapToScene (img_item->pos ()) ;
         auto p2 = QPointF (p1.x() + dx, p1.y() + dy) ;
         img_item->setPos (img_item->mapFromScene (p2)) ;
+        img_mirrored_item->setPos (img_item->mapFromScene (p2)) ;
+        auto pos = img_item->pos () ;
+        app->save_xy (pos.x (), pos.y ()) ;
       }
     }) ;
 
   connect (app, &Application::img_scale,
-    [this] (double scale, bool mirrored) {
+    [this] (double scale) {
       if (img_item) {
         rotscale_item->setScale (scale) ;
+      }
+    }) ;
+
+  connect (app, &Application::img_mirror,
+    [this] (bool value) {
+      if (img_item && img_mirrored_item) {
+        img_item->setVisible (!value) ;
+        img_mirrored_item->setVisible (value) ;
       }
     }) ;
 }
@@ -64,16 +76,28 @@ void GraphicsView::context_refresh (Application::Context::Ptr ctx) {
     scene->removeItem (img_item) ;
     img_item = nullptr ;
     rotscale_item->setScale (0) ;
+
+    if (img_mirrored_item) {
+      scene->removeItem (img_mirrored_item) ;
+    }
   }
 
   if (ctx->images.size () > 0) {
     auto img_file = ctx->dir.absoluteFilePath (
       ctx->images[ctx->current_image_index]) ;
-    img_item = new QGraphicsPixmapItem (img_file, rotscale_item) ;
+
+    auto pix = QPixmap (img_file) ;
+    auto pix_mirrored =
+      QPixmap::fromImage (pix.toImage ().mirrored (true, false)) ;
+
+    img_item = new QGraphicsPixmapItem (pix, rotscale_item) ;
+    img_mirrored_item = new QGraphicsPixmapItem (pix_mirrored, rotscale_item) ;
     //img_item = scene->addPixmap (img_file) ;
     auto size = img_item->boundingRect () ;
-    img_item->setPos (- size.width () / 2, - size.height () / 2) ;
 
+    img_item->setPos (- size.width () / 2, - size.height () / 2) ;
+    img_mirrored_item->setPos (- size.width () / 2, - size.height () / 2) ;
+    img_mirrored_item->setVisible (false) ;
   }
 }
 

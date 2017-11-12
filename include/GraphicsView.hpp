@@ -21,6 +21,7 @@ class GraphicsView : public QGraphicsView {
 
   QSharedPointer<QGraphicsScene> scene ;
   QGraphicsPixmapItem *img_item ;
+  QGraphicsPixmapItem *img_mirrored_item ;
   QGraphicsItem *rotscale_item ;
 
   public slots :

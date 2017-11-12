@@ -92,9 +92,9 @@ void Application::state_refreshed () {
       states[key] = state ;
     }
 
-    emit img_scale (state->scale (), false) ;
-    emit img_translate (state->x, state->y, false) ;
-    //emit img_rotate (state->rot, false) ;
+    emit img_scale (state->scale ()) ;
+    emit img_translate (state->x, state->y) ;
+    //emit img_rotate (state->rot) ;
     //emit img_mirror (state->mirrored) ;
 
     current_state = state ;
@@ -132,16 +132,22 @@ void Application::on_resize () {
   emit resized () ;
 }
 
+void Application::on_mirrorToggle () {
+  if (current_state) {
+    bool & val = current_state->mirrored ;
+    val = !val ;
+    emit img_mirror (val) ;
+  }
+}
+
 void Application::drag (double x2, double y2) {
   if (current_state) {
-
-    bool mirrored = current_state->mirrored ;
 
     if (move_grabbed) {
       double dx = x2 - x1 ;
       double dy = y2 - y1 ;
 
-      emit img_translate (dx, dy, mirrored) ;
+      emit img_translate (dx, dy) ;
 
     } else if (scale_grabbed) {
 
@@ -151,7 +157,7 @@ void Application::drag (double x2, double y2) {
       if (z < 0.05) { z = 0.05 ; }
       else if (z > 20) { z = 20 ; }
 
-      emit img_scale (current_state->scale (), mirrored) ;
+      emit img_scale (current_state->scale ()) ;
 
     }
 

@@ -34,6 +34,12 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
 
   auto quitAction = fileMenu->addAction (tr("&Quit")) ;
   connect (quitAction, &QAction::triggered, [] () { app->quit (); }) ;
+
+  auto mirrorToggleAction = menuBar ()->addAction (tr("&Mirror Toggle")) ;
+
+  connect (mirrorToggleAction, &QAction::triggered, [] () { app->on_mirrorToggle () ; }) ;
+
+  statusBar () ;
 }
 
 QSize MainWindow::sizeHint () {

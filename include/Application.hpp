@@ -55,6 +55,7 @@ class Application : public QApplication {
 
     Context () ;
     ~Context () ;
+    bool operator == (const Context &other) ;
 
     bool step_image_index (int step) ;
   } ;
@@ -81,6 +82,8 @@ class Application : public QApplication {
   void on_nextImage (StepMode mode) ;
   void on_prevImage (StepMode mode) ;
   void save_xy (double x, double y) ;
+  void on_context_selection (QUuid id) ;
+  void on_context_deletion (QUuid id) ;
 
   signals:
     void all_contexts_changed (Context::List all_contexts) ;

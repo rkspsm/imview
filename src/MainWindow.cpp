@@ -12,6 +12,7 @@
 #include <QLabel>
 #include <QRadioButton>
 #include <QButtonGroup>
+#include <QKeySequence>
 
 using std::cerr ;
 using std::endl ;
@@ -34,6 +35,14 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
 
       if (dir.size () > 0) {
         app->dir_selected (QDir (dir)) ;
+      }
+    }) ;
+
+  auto closeAction = fileMenu->addAction (tr("Close")) ;
+  connect (closeAction, &QAction::triggered,
+    [] () {
+      if (app->current_context) {
+        app->on_context_deletion (app->current_context->id) ;
       }
     }) ;
 
@@ -128,13 +137,36 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
   } ;
 
   auto nextImageAction = activitiesMenu->addAction (tr ("Next Image")) ;
+  nextImageAction->setShortcut (QKeySequence (tr("d"))) ;
   connect (nextImageAction, &QAction::triggered, 
     [get_step_mode] () { app->on_nextImage (get_step_mode ()) ; }) ;
 
   auto prevImageAction = activitiesMenu->addAction (tr ("Previous Image")) ;
+  prevImageAction->setShortcut (QKeySequence (tr("a"))) ;
   connect (prevImageAction, &QAction::triggered,
     [get_step_mode] () { app->on_prevImage (get_step_mode ()) ; }) ;
 
+  auto contextMenu = menuBar ()->addMenu ("Contexts") ;
+
+  connect (app, &Application::all_contexts_changed,
+    [contextMenu] (Application::Context::List ctxs) {
+      contextMenu->clear () ;
+
+      for (int i = 0 ; i < ctxs.size () ; i++) {
+        auto ctx = ctxs.at (i) ;
+        auto uid_str = ctx->id.toString () ;
+        auto dir_str = ctx->dir.dirName () ;
+        auto action = contextMenu->addAction (
+          QString ("%1: %2...")
+          .arg (ctx->id.toString ().mid (1, 5), 8)
+          .arg (ctx->dir.dirName ().left (15), 15)
+        ) ;
+        action->setData (QVariant (ctx->id)) ;
+
+        connect (action, &QAction::triggered,
+          [ctx] () { app->on_context_selection (ctx->id); }) ;
+      }
+    }) ;
 
   statusBar () ;
 }

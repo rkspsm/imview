@@ -102,6 +102,10 @@ void GraphicsView::context_refresh (Application::Context::Ptr ctx) {
     }
   }
 
+  if (! ctx) {
+    return ;
+  }
+
   if (ctx->images.size () > 0) {
     auto img_file = ctx->dir.absoluteFilePath (
       ctx->images[ctx->current_image_index]) ;

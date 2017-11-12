@@ -46,6 +46,10 @@ Application::Context::Context ()
   , current_image_index (0)
 { }
 
+bool Application::Context::operator == (const Application::Context & other) {
+  return id == other.id ;
+}
+
 bool Application::Context::step_image_index (int step) {
   auto size = images.size () ;
   auto & current = current_image_index ;
@@ -92,6 +96,8 @@ void Application::dir_selected (const QDir & dir) {
   all_contexts.push_back (new_context) ;
   current_context = new_context ;
 
+  state_refreshed (true) ;
+
   emit all_contexts_changed (all_contexts) ;
   emit current_context_changed (current_context) ;
 
@@ -99,6 +105,11 @@ void Application::dir_selected (const QDir & dir) {
 }
 
 void Application::state_refreshed (bool just_update_state) {
+
+  if (! current_context) { 
+    current_state = nullptr ;
+    return ;
+  }
 
   auto index = current_context->current_image_index ;
   const auto & images = current_context->images ;
@@ -303,5 +314,68 @@ void Application::drag (double x2, double y2) {
     x1 = x2 ;
     y1 = y2 ;
   }
+}
+
+void Application::on_context_selection (QUuid id) {
+  Context::Ptr target = nullptr ;
+  for (int i = 0 ; i < all_contexts.size () ; i++) {
+    if (all_contexts.at (i)->id == id) {
+      target = all_contexts.at (i) ;
+      break ;
+    }
+  }
+
+  if (target) {
+    current_context = target ;
+  }
+
+  state_refreshed (true) ;
+
+  emit all_contexts_changed (all_contexts) ;
+  emit current_context_changed (current_context) ;
+
+  state_refreshed () ;
+}
+
+void Application::on_context_deletion (QUuid id) {
+  Context::Ptr target = nullptr ;
+  int t_i = 0 ;
+  for (int i = 0 ; i < all_contexts.size () ; i++) {
+    if (all_contexts.at (i)->id == id) {
+      target = all_contexts.at (i) ;
+      t_i = i ;
+      break ;
+    }
+  }
+
+  if (! target or ! current_context) { return ; }
+
+  auto target_id = target->id ;
+  auto current_id = current_context->id ;
+
+  all_contexts.removeAt (t_i) ;
+
+  if (target_id == current_id) {
+    if (all_contexts.size () > 0) {
+      current_context = all_contexts.at (0) ;
+
+      state_refreshed (true) ;
+
+      emit all_contexts_changed (all_contexts) ;
+      emit current_context_changed (current_context) ;
+
+      state_refreshed () ;
+    } else {
+      current_context = nullptr ;
+      current_state = nullptr ;
+
+      emit all_contexts_changed (all_contexts) ;
+      emit current_context_changed (current_context) ;
+    }
+
+  } else {
+    emit all_contexts_changed (all_contexts) ;
+  }
+  
 }
 

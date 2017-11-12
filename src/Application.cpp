@@ -1,5 +1,10 @@
 #include "Application.hpp"
 
+#include <QSqlDatabase>
+#include <QSqlQuery>
+#include <QSqlError>
+#include <QSetIterator>
+
 #include <QtMath>
 #include <cmath>
 
@@ -9,13 +14,18 @@ using std::cerr ;
 using std::endl ;
 using std::fmod ;
 
-std::ostream& operator << (std::ostream & out, const QPoint x) {
+std::ostream& operator << (std::ostream & out, const QPoint & x) {
   out << "(" << x.x () << ", " << x.y () << ")" ;
   return out ;
 }
 
-std::ostream& operator << (std::ostream & out, const QPointF x) {
+std::ostream& operator << (std::ostream & out, const QPointF & x) {
   out << "(" << x.x () << ", " << x.y () << ")" ;
+  return out ;
+}
+
+std::ostream& operator << (std::ostream & out, const QString & x) {
+  out << x.toStdString () ;
   return out ;
 }
 
@@ -117,13 +127,12 @@ void Application::state_refreshed (bool just_update_state) {
   if (index < images.size () && index >= 0) {
     ImageState::Ptr state ;
     auto & states = current_context->states ;
-    auto key = images[index] ;
 
-    if (states.contains (key)) {
-      state = states[key] ;
+    if (states.contains (index)) {
+      state = states[index] ;
     } else {
       state = ImageState::Ptr::create () ;
-      states[key] = state ;
+      states[index] = state ;
     }
 
     current_state = state ;
@@ -377,5 +386,202 @@ void Application::on_context_deletion (QUuid id) {
     emit all_contexts_changed (all_contexts) ;
   }
   
+}
+
+bool setup_db (const QString & file) {
+  auto db = QSqlDatabase::addDatabase ("QSQLITE") ;
+  db.setDatabaseName (file) ;
+
+  if (not db.open ()) { return false ; }
+  else {
+    if (db.tables ().size () == 0) {
+      QSqlQuery query ;
+
+      query.exec ("create table version (value varchar(256))") ;
+      query.exec ("insert into version values ('0.0.1')") ;
+      query.exec ("create table current_context_id (value blob)") ;
+      query.exec ("create table context (id blob, dir varchar, current_image_index int)") ;
+      query.exec ("create table context_mem_images (context_id blob, index int, image varchar)") ;
+      query.exec ("create table image_state (context_id blob, image_index int, x real, y real, z real, rot real, mirrored bool, pristine bool)") ;
+
+      if (query.lastError ().isValid ()) {
+        cerr << "Error in setup : " << endl ;
+        cerr << query.lastError ().text () << endl ;
+        db.close () ;
+        QFile (file).remove () ;
+        return false ;
+      }
+    }
+  }
+
+  return true ;
+}
+
+void Application::flush_to_db () {
+  QSqlQuery query ;
+
+  auto check = [this, &query] () {
+    if (query.lastError ().isValid ()) {
+      cerr << "Error in flush_to_db : " << endl ;
+      cerr << query.lastError ().text () << endl ;
+      quit () ;
+      return false ;
+    }
+
+    return true ;
+  } ;
+
+  query.exec ("delete from current_context_id") ;
+  if (current_context) {
+    query.prepare ("insert into current_context_id values (:context_id)") ;
+    query.bindValue (":context_id", current_context->id) ;
+    query.exec () ;
+  }
+
+  if (!check ()) { return ; }
+
+  QSetIterator<QUuid> i (deleted_contexts) ;
+  while (i.hasNext ()) {
+    auto ctx_id = i.next () ;
+
+    query.prepare ("delete from image_state where context_id=:context_id") ;
+    query.bindValue (":context_id", ctx_id) ;
+    query.exec () ;
+
+    query.prepare ("delete from context_mem_images where context_id=:context_id") ;
+    query.bindValue (":context_id", ctx_id) ;
+    query.exec () ;
+
+    query.prepare ("delete from context where id=:context_id") ;
+    query.bindValue (":context_id", ctx_id) ;
+    query.exec () ;
+  }
+
+  deleted_contexts.clear () ;
+
+  if (!check ()) { return ; }
+
+  QSet<QUuid> saved_ctxs ;
+  query.exec ("select id from context") ;
+  while (query.next ()) {
+    saved_ctxs.insert (query.value (0).toUuid ()) ;
+  }
+
+  if (!check ()) { return ; }
+
+  for (int i = 0 ; i < all_contexts.size () ; i ++) {
+
+    auto ctx = all_contexts.at (i) ;
+
+    if (dirty_contexts.contains (ctx->id)) {
+
+      if (saved_ctxs.contains (ctx->id)) {
+
+        query.prepare ("update context set current_image_index=:current_image_index where id=:context_id") ;
+        query.bindValue (":context_id", ctx->id) ;
+        query.bindValue (":current_image_index", ctx->current_image_index) ;
+        query.exec () ;
+
+        if (!check ()) { return ; }
+
+        QSet<int> saved_states ;
+        query.prepare ("select image_index from image_state where context_id=:context_id") ;
+        query.bindValue (":context_id", ctx->id) ;
+        query.exec () ;
+        while (query.next ()) {
+          saved_states.insert (query.value (0).toInt ()) ;
+        }
+
+        if (!check ()) { return ; }
+
+        QSetIterator<int> iter (ctx->dirty_states) ;
+        while (iter.hasNext ()) {
+          auto index = iter.next () ;
+          auto state = ctx->states[index] ;
+
+          if (saved_states.contains (index)) {
+            query.prepare ("update image_state set x=:state_x , y=:state_y , z=:state_z , rot=:state_rot , mirrored=:state_mirrored , pristine=:state_pristine where context_id=:context_id and image_index=:image_index") ;
+            query.bindValue (":context_id", ctx->id) ;
+            query.bindValue (":image_index", index) ;
+            query.bindValue (":state_x", state->x) ;
+            query.bindValue (":state_y", state->y) ;
+            query.bindValue (":state_z", state->z) ;
+            query.bindValue (":state_rot", state->rot) ;
+            query.bindValue (":state_mirrored", state->mirrored) ;
+            query.bindValue (":state_pristine", state->pristine) ;
+            query.exec () ;
+          } else {
+            query.prepare ("insert into image_state values (:context_id, :image_index, :state_x, :state_y, :state_z, :state_rot, :state_mirrored, :state_pristine)") ;
+            query.bindValue (":context_id", ctx->id) ;
+            query.bindValue (":image_index", index) ;
+            query.bindValue (":state_x", state->x) ;
+            query.bindValue (":state_y", state->y) ;
+            query.bindValue (":state_z", state->z) ;
+            query.bindValue (":state_rot", state->rot) ;
+            query.bindValue (":state_mirrored", state->mirrored) ;
+            query.bindValue (":state_pristine", state->pristine) ;
+            query.exec () ;
+          }
+        }
+
+        if (!check ()) { return ; }
+
+      } else {
+
+        query.prepare ("insert into context values (:context_id, :context_dir, :current_image_index)") ;
+        query.bindValue (":context_id", ctx->id) ;
+        query.bindValue (":contxt_dir", ctx->dir.absolutePath ()) ;
+        query.bindValue (":current_image_index", ctx->current_image_index) ;
+        query.exec () ;
+
+        if (!check ()) { return ; }
+
+        for (int img_index = 0 ; img_index < ctx->images.size (); img_index++) {
+          auto img_name = ctx->images.at (img_index) ;
+
+          query.prepare ("insert into context_mem_images values (:context_id, :index, :image)") ;
+          query.bindValue (":context_id", ctx->id) ;
+          query.bindValue (":index", img_index) ;
+          query.bindValue (":image", img_name) ;
+
+          if (ctx->states.contains (img_index)) {
+            auto state = ctx->states[img_index] ;
+            
+            query.prepare ("insert into image_state values (:context_id, :image_index, :state_x, :state_y, :state_z, :state_rot, :state_mirrored, :state_pristine)") ;
+            query.bindValue (":context_id", ctx->id) ;
+            query.bindValue (":image_index", img_index) ;
+            query.bindValue (":state_x", state->x) ;
+            query.bindValue (":state_y", state->y) ;
+            query.bindValue (":state_z", state->z) ;
+            query.bindValue (":state_rot", state->rot) ;
+            query.bindValue (":state_mirrored", state->mirrored) ;
+            query.bindValue (":state_pristine", state->pristine) ;
+            query.exec () ;
+          }
+        }
+
+        if (!check ()) { return ; }
+      }
+    }
+  }
+
+  dirty_contexts.clear () ;
+}
+
+int Application::exec (QWidget * widget) {
+  auto args = app->arguments () ;
+  if (args.size () < 2) {
+    cerr << "Please provide sqlite backend file." << endl ;
+    return EXIT_FAILURE ;
+  } else {
+    auto sqlite_file = args.at (1) ;
+    if (! setup_db (sqlite_file)) {
+      cerr << "Failed to setup database : " << sqlite_file << endl ;
+      return EXIT_FAILURE ;
+    } else {
+      widget->show () ;
+      return QApplication::exec () ;
+    }
+  }
 }
 

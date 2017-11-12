@@ -4,6 +4,8 @@
 #include <QList>
 #include <QSharedPointer>
 #include <QHash>
+#include <QSet>
+#include <QWidget>
 
 #include <iostream>
 
@@ -15,6 +17,8 @@ class Application : public QApplication {
 
   Application (int & argc, char ** &argv) ;
   ~Application () ;
+
+  int exec (QWidget * mainWidget) ;
 
   enum class StepMode {
     sm_Normal,
@@ -51,7 +55,9 @@ class Application : public QApplication {
     QDir dir ;
     QStringList images ;
     int current_image_index ;
-    QHash<QString,ImageState::Ptr> states ;
+    QHash<int,ImageState::Ptr> states ;
+
+    QSet<int> dirty_states ;
 
     Context () ;
     ~Context () ;
@@ -63,6 +69,9 @@ class Application : public QApplication {
   Context::List all_contexts ;
   Context::Ptr current_context ;
   ImageState::Ptr current_state ;
+
+  QSet<QUuid> dirty_contexts ;
+  QSet<QUuid> deleted_contexts ;
 
   bool move_grabbed, scale_grabbed ;
   double grab_x, grab_y ;
@@ -84,6 +93,8 @@ class Application : public QApplication {
   void save_xy (double x, double y) ;
   void on_context_selection (QUuid id) ;
   void on_context_deletion (QUuid id) ;
+
+  void flush_to_db () ;
 
   signals:
     void all_contexts_changed (Context::List all_contexts) ;

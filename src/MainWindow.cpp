@@ -10,6 +10,8 @@
 #include <QSlider>
 #include <QToolBar>
 #include <QLabel>
+#include <QRadioButton>
+#include <QButtonGroup>
 
 using std::cerr ;
 using std::endl ;
@@ -39,12 +41,6 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
   connect (quitAction, &QAction::triggered, [] () { app->quit (); }) ;
 
   auto activitiesMenu = menuBar ()->addMenu (tr("Navigation")) ;
-
-  auto nextImageAction = activitiesMenu->addAction (tr ("Next Image")) ;
-  connect (nextImageAction, &QAction::triggered, [] () { app->on_nextImage () ; }) ;
-
-  auto prevImageAction = activitiesMenu->addAction (tr ("Previous Image")) ;
-  connect (prevImageAction, &QAction::triggered, [] () { app->on_prevImage () ; }) ;
 
   auto toolbar = addToolBar (tr("Control")) ;
   auto rotSlider = new QSlider (Qt::Horizontal) ;
@@ -90,6 +86,55 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
     [mirrorToggleAction] (bool value) {
       mirrorToggleAction->setChecked (value) ;
     }) ;
+
+  auto smartNavigationToolbar = new QToolBar ("Smart Navigation") ;
+  addToolBar (Qt::BottomToolBarArea, smartNavigationToolbar) ;
+
+  auto snr_normal = new QRadioButton ("Normal") ;
+  snr_normal->setChecked (true) ;
+  auto snr_15 = new QRadioButton ("15") ;
+  auto snr_22_5 = new QRadioButton ("22.5") ;
+  auto snr_30 = new QRadioButton ("30") ;
+  auto snr_45 = new QRadioButton ("45") ;
+
+  auto snr_group = new QButtonGroup (this) ;
+  snr_group->addButton (snr_normal, 0) ;
+  snr_group->addButton (snr_15, 15) ;
+  snr_group->addButton (snr_22_5, 225) ;
+  snr_group->addButton (snr_30, 30) ;
+  snr_group->addButton (snr_45, 45) ;
+
+  smartNavigationToolbar->addWidget (snr_normal) ;
+  smartNavigationToolbar->addWidget (snr_15) ;
+  smartNavigationToolbar->addWidget (snr_22_5) ;
+  smartNavigationToolbar->addWidget (snr_30) ;
+  smartNavigationToolbar->addWidget (snr_45) ;
+
+  auto get_step_mode = [snr_group] () {
+    switch (snr_group->checkedId ()) {
+      case 0 :
+        return Application::StepMode::sm_Normal ;
+      case 15 :
+        return Application::StepMode::sm_15 ;
+      case 225 :
+        return Application::StepMode::sm_22_5 ;
+      case 30 :
+        return Application::StepMode::sm_30 ;
+      case 45 :
+        return Application::StepMode::sm_45 ;
+      default :
+        return Application::StepMode::sm_Normal ;
+    }
+  } ;
+
+  auto nextImageAction = activitiesMenu->addAction (tr ("Next Image")) ;
+  connect (nextImageAction, &QAction::triggered, 
+    [get_step_mode] () { app->on_nextImage (get_step_mode ()) ; }) ;
+
+  auto prevImageAction = activitiesMenu->addAction (tr ("Previous Image")) ;
+  connect (prevImageAction, &QAction::triggered,
+    [get_step_mode] () { app->on_prevImage (get_step_mode ()) ; }) ;
+
 
   statusBar () ;
 }

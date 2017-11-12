@@ -1,11 +1,13 @@
 #include "Application.hpp"
 
 #include <QtMath>
+#include <cmath>
 
 #include <iostream>
 
 using std::cerr ;
 using std::endl ;
+using std::fmod ;
 
 std::ostream& operator << (std::ostream & out, const QPoint x) {
   out << "(" << x.x () << ", " << x.y () << ")" ;
@@ -19,6 +21,8 @@ std::ostream& operator << (std::ostream & out, const QPointF x) {
 
 Application::~Application () { }
 
+//void dbg () ;
+
 Application::Application (int & argc, char ** &argv) 
   : QApplication (argc, argv)
   , move_grabbed (false)
@@ -31,7 +35,8 @@ Application::Application (int & argc, char ** &argv)
   setApplicationName ("rks_art_imview_2") ;
   setOrganizationName ("rks_home") ;
   setOrganizationDomain ("art.rks.ravi039.net") ;
-  //app = this ;
+
+  //dbg () ;
 }
 
 Application::Context::~Context () { }
@@ -93,7 +98,7 @@ void Application::dir_selected (const QDir & dir) {
   state_refreshed () ;
 }
 
-void Application::state_refreshed () {
+void Application::state_refreshed (bool just_update_state) {
 
   auto index = current_context->current_image_index ;
   const auto & images = current_context->images ;
@@ -112,14 +117,16 @@ void Application::state_refreshed () {
 
     current_state = state ;
 
-    emit img_scale (state->scale ()) ;
-    if (state->pristine) {
-      emit img_translate (state->x, state->y) ;
-    } else {
-      emit img_locate (state->x, state->y) ;
+    if (! just_update_state) {
+      emit img_scale (state->scale ()) ;
+      if (state->pristine) {
+        emit img_translate (state->x, state->y) ;
+      } else {
+        emit img_locate (state->x, state->y) ;
+      }
+      emit img_rotate (state->rot) ;
+      emit img_mirror (state->mirrored) ;
     }
-    emit img_rotate (state->rot) ;
-    emit img_mirror (state->mirrored) ;
 
   }
 }
@@ -156,20 +163,103 @@ void Application::on_resize () {
   emit resized () ;
 }
 
-void Application::on_nextImage () {
+double mode_value (Application::StepMode mode) {
+  typedef Application::StepMode SM ;
+  switch (mode) {
+    case SM::sm_15 :
+      return 15.0f ;
+    case SM::sm_22_5 :
+      return 22.5f ;
+    case SM::sm_30 :
+      return 30.0f ;
+    case SM::sm_45 :
+      return 45.0f ;
+    default :
+      return 360.0f ;
+  }
+}
+
+bool close_to_mode_angle (double angle, Application::StepMode mode) {
+  int x = static_cast<int> (fmod (angle, mode_value (mode)) * 100.0f) ;
+  return x == 0 ;
+}
+
+bool nextAngle (double & angle, Application::StepMode mode, bool backwards = false) {
+  typedef Application::StepMode SM ;
+
+  if (mode == SM::sm_Normal) { return false ; }
+
+  if (angle < 0) { angle = 0 ; return true ; }
+  if (angle >= 360) { return false ; }
+
+  double mval = mode_value (mode) ;
+
+  if (backwards) {
+    if (static_cast<int> (angle * 100.0f) == 0) { return false ; }
+    if (close_to_mode_angle (angle, mode)) { angle -= 0.5; }
+    double rem = fmod (angle, mval) ;
+    double t = angle - rem ;
+    if (t < 0) { return false ; }
+    else { angle = t ; }
+  } else {
+    int f = angle / mval ;
+    double t = ((double) f + 1) * mval ;
+    if (t >= 360) { return false ; }
+    else { angle = t ; }
+  }
+
+  return true ;
+}
+
+void Application::on_nextImage (Application::StepMode mode) {
+  typedef Application::StepMode SM ;
   if (current_context) {
-    if (current_context->step_image_index (1)) {
+
+    if (current_state && mode != SM::sm_Normal) {
+      if (close_to_mode_angle (current_state->rot, mode) && 
+          (! current_state->mirrored)) {
+        return on_mirrorToggle () ;
+      }
+    }
+
+    if (nextAngle (current_state->rot, mode)) {
+      current_state->mirrored = false ;
+      emit img_rotate (current_state->rot) ;
+      emit img_mirror (current_state->mirrored) ;
+    } else if (current_context->step_image_index (1)) {
+      state_refreshed (true) ;
       emit current_img_changed (current_context) ;
       state_refreshed () ;
+      return ;
     }
   }
 }
 
-void Application::on_prevImage () {
+void Application::on_prevImage (Application::StepMode mode) {
+  typedef Application::StepMode SM ;
   if (current_context) {
-    if (current_context->step_image_index (-1)) {
+
+    if (current_state && mode != SM::sm_Normal) {
+      if (close_to_mode_angle (current_state->rot, mode) && 
+          (current_state->mirrored)) {
+        return on_mirrorToggle () ;
+      }
+    }
+
+    if (nextAngle (current_state->rot, mode, true)) {
+      current_state->mirrored = true ;
+      emit img_rotate (current_state->rot) ;
+      emit img_mirror (current_state->mirrored) ;
+    } else if (current_context->step_image_index (-1)) {
+      state_refreshed (true) ;
+      if (mode != SM::sm_Normal) {
+        current_state->rot = 359.0f ;
+        nextAngle (current_state->rot, mode, true) ;
+        current_state->mirrored = true ;
+      }
       emit current_img_changed (current_context) ;
       state_refreshed () ;
+      return ;
     }
   }
 }

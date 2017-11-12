@@ -16,6 +16,14 @@ class Application : public QApplication {
   Application (int & argc, char ** &argv) ;
   ~Application () ;
 
+  enum class StepMode {
+    sm_Normal,
+    sm_15,
+    sm_22_5,
+    sm_30,
+    sm_45
+  } ;
+
   class ImageState {
     public :
 
@@ -60,7 +68,7 @@ class Application : public QApplication {
   double x1, y1 ;
 
   void dir_selected (const QDir & dir) ;
-  void state_refreshed () ;
+  void state_refreshed (bool just_update_state = false) ;
   void move_grab (double x, double y) ;
   void move_ungrab (double x, double y) ;
   void scale_grab (double x, double y) ;
@@ -70,8 +78,8 @@ class Application : public QApplication {
   void on_resize () ;
   void on_rotation (double value) ;
   void on_mirrorToggle () ;
-  void on_nextImage () ;
-  void on_prevImage () ;
+  void on_nextImage (StepMode mode) ;
+  void on_prevImage (StepMode mode) ;
   void save_xy (double x, double y) ;
 
   signals:

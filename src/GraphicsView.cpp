@@ -51,7 +51,16 @@ GraphicsView::GraphicsView (QWidget* parent)
         img_item->setPos (img_item->mapFromScene (p2)) ;
         img_mirrored_item->setPos (img_item->mapFromScene (p2)) ;
         auto pos = img_item->pos () ;
+        auto size = img_item->boundingRect () ;
         app->save_xy (pos.x (), pos.y ()) ;
+      }
+    }) ;
+
+  connect (app, &Application::img_locate,
+    [this] (double x, double y) {
+      if (img_item) {
+        img_item->setPos (x, y) ;
+        img_mirrored_item->setPos (x, y) ;
       }
     }) ;
 
@@ -69,13 +78,16 @@ GraphicsView::GraphicsView (QWidget* parent)
         img_mirrored_item->setVisible (value) ;
       }
     }) ;
+
+  connect (app, &Application::current_img_changed,
+    this, &GraphicsView::context_refresh ) ;
 }
 
 void GraphicsView::context_refresh (Application::Context::Ptr ctx) {
   if (img_item) {
     scene->removeItem (img_item) ;
     img_item = nullptr ;
-    rotscale_item->setScale (0) ;
+    rotscale_item->setScale (1) ;
 
     if (img_mirrored_item) {
       scene->removeItem (img_mirrored_item) ;

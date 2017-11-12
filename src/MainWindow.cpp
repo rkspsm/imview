@@ -35,9 +35,16 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
   auto quitAction = fileMenu->addAction (tr("&Quit")) ;
   connect (quitAction, &QAction::triggered, [] () { app->quit (); }) ;
 
-  auto mirrorToggleAction = menuBar ()->addAction (tr("&Mirror Toggle")) ;
+  auto activitiesMenu = menuBar ()->addMenu (tr("&Activities")) ;
 
+  auto mirrorToggleAction = activitiesMenu->addAction (tr("Mirror Toggle")) ;
   connect (mirrorToggleAction, &QAction::triggered, [] () { app->on_mirrorToggle () ; }) ;
+
+  auto nextImageAction = activitiesMenu->addAction (tr ("Next Image")) ;
+  connect (nextImageAction, &QAction::triggered, [] () { app->on_nextImage () ; }) ;
+
+  auto prevImageAction = activitiesMenu->addAction (tr ("Previous Image")) ;
+  connect (prevImageAction, &QAction::triggered, [] () { app->on_prevImage () ; }) ;
 
   statusBar () ;
 }

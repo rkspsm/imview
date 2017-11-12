@@ -25,6 +25,7 @@ class Application : public QApplication {
     double z ;
     double rot ;
     bool mirrored ;
+    bool pristine ;
 
     ImageState () ;
     ~ImageState () ;
@@ -46,6 +47,8 @@ class Application : public QApplication {
 
     Context () ;
     ~Context () ;
+
+    bool step_image_index (int step) ;
   } ;
 
   Context::List all_contexts ;
@@ -66,12 +69,16 @@ class Application : public QApplication {
 
   void on_resize () ;
   void on_mirrorToggle () ;
+  void on_nextImage () ;
+  void on_prevImage () ;
   void save_xy (double x, double y) ;
 
   signals:
     void all_contexts_changed (Context::List all_contexts) ;
     void current_context_changed (Context::Ptr current_context) ;
+    void current_img_changed (Context::Ptr context) ;
     void img_translate (double dx, double dy) ;
+    void img_locate (double x, double y) ;
     void img_rotate (double rotate) ;
     void img_scale (double scale) ;
     void img_mirror (bool value) ;

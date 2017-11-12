@@ -41,10 +41,28 @@ Application::Context::Context ()
   , current_image_index (0)
 { }
 
+bool Application::Context::step_image_index (int step) {
+  auto size = images.size () ;
+  auto & current = current_image_index ;
+
+  if (size == 0) { return false ; }
+  else {
+    current += step ;
+    if (current >= size) {
+      current = current % size ;
+    } else if (current < 0) {
+      current = (size - ((- current) % size)) % size ;
+    }
+  }
+
+  return true ;
+}
+
 Application::ImageState::~ImageState () { }
 
 Application::ImageState::ImageState () :
   x (0), y (0), z (1), rot (0), mirrored (false)
+  , pristine (true)
 { }
 
 double Application::ImageState::scale () const { return 1.0f/z ; }
@@ -92,12 +110,17 @@ void Application::state_refreshed () {
       states[key] = state ;
     }
 
+    current_state = state ;
+
     emit img_scale (state->scale ()) ;
-    emit img_translate (state->x, state->y) ;
+    if (state->pristine) {
+      emit img_translate (state->x, state->y) ;
+    } else {
+      emit img_locate (state->x, state->y) ;
+    }
     //emit img_rotate (state->rot) ;
     //emit img_mirror (state->mirrored) ;
 
-    current_state = state ;
   }
 }
 
@@ -125,11 +148,30 @@ void Application::save_xy (double x, double y) {
   if (current_state) {
     current_state->x = x ;
     current_state->y = y ;
+    current_state->pristine = false ;
   }
 }
 
 void Application::on_resize () {
   emit resized () ;
+}
+
+void Application::on_nextImage () {
+  if (current_context) {
+    if (current_context->step_image_index (1)) {
+      emit current_img_changed (current_context) ;
+      state_refreshed () ;
+    }
+  }
+}
+
+void Application::on_prevImage () {
+  if (current_context) {
+    if (current_context->step_image_index (-1)) {
+      emit current_img_changed (current_context) ;
+      state_refreshed () ;
+    }
+  }
 }
 
 void Application::on_mirrorToggle () {

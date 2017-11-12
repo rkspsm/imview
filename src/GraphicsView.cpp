@@ -13,6 +13,7 @@ GraphicsView::~GraphicsView () { }
 GraphicsView::GraphicsView (QWidget* parent)
     : QGraphicsView (parent)
     , img_item (nullptr)
+    , rotscale_item (nullptr)
 {
 
   //resize (sizeHint ()) ;
@@ -29,8 +30,51 @@ GraphicsView::GraphicsView (QWidget* parent)
 
   setAlignment (Qt::AlignLeft | Qt::AlignTop) ;
 
+  connect (app, &Application::resized,
+    [this] () {
+      centerOn (10000, 10000) ;
+    }) ;
+
+  rotscale_item = new QGraphicsItemGroup () ;
+  scene->addItem (rotscale_item) ;
+  rotscale_item->setPos (10000, 10000) ;
+
   connect (app, &Application::current_context_changed,
     this, &GraphicsView::context_refresh ) ;
+
+  connect (app, &Application::img_translate,
+    [this] (double dx, double dy, bool mirrored) {
+      if (img_item) {
+        auto p1 = img_item->mapToScene (img_item->pos ()) ;
+        auto p2 = QPointF (p1.x() + dx, p1.y() + dy) ;
+        img_item->setPos (img_item->mapFromScene (p2)) ;
+      }
+    }) ;
+
+  connect (app, &Application::img_scale,
+    [this] (double scale, bool mirrored) {
+      if (img_item) {
+        rotscale_item->setScale (scale) ;
+      }
+    }) ;
+}
+
+void GraphicsView::context_refresh (Application::Context::Ptr ctx) {
+  if (img_item) {
+    scene->removeItem (img_item) ;
+    img_item = nullptr ;
+    rotscale_item->setScale (0) ;
+  }
+
+  if (ctx->images.size () > 0) {
+    auto img_file = ctx->dir.absoluteFilePath (
+      ctx->images[ctx->current_image_index]) ;
+    img_item = new QGraphicsPixmapItem (img_file, rotscale_item) ;
+    //img_item = scene->addPixmap (img_file) ;
+    auto size = img_item->boundingRect () ;
+    img_item->setPos (- size.width () / 2, - size.height () / 2) ;
+
+  }
 }
 
 QSize GraphicsView::sizeHint () {
@@ -41,18 +85,31 @@ QSizePolicy GraphicsView::sizePolicy () {
   return QSizePolicy (QSizePolicy::Expanding, QSizePolicy::Expanding) ;
 }
 
-void GraphicsView::context_refresh (Application::Context::Ptr ctx) {
-  if (img_item) {
-    scene->removeItem (img_item) ;
-    img_item = nullptr ;
+void GraphicsView::mousePressEvent (QMouseEvent* evt) {
+  switch (evt->button ()) {
+    case Qt::LeftButton :
+      app->move_grab (evt->x (), evt->y ()) ;
+      break ;
+    case Qt::MiddleButton :
+    case Qt::RightButton :
+      app->scale_grab (evt->x (), evt->y ()) ;
+      break ;
   }
+}
 
-  const auto & il = ctx->image_list ;
-  if (il.images.size () > 0) {
-    auto img_file = ctx->dir.absoluteFilePath (il.images[il.current_file_index]) ;
-    img_item = scene->addPixmap (img_file) ;
-    auto size = img_item->boundingRect () ;
-    img_item->setPos (10000 - size.width () / 2, 10000 - size.height () / 2) ;
+void GraphicsView::mouseReleaseEvent (QMouseEvent* evt) {
+  switch (evt->button ()) {
+    case Qt::LeftButton :
+      app->move_ungrab (evt->x (), evt->y ()) ;
+      break ;
+    case Qt::MiddleButton :
+    case Qt::RightButton :
+      app->scale_ungrab (evt->x (), evt->y ()) ;
+      break ;
   }
+}
+
+void GraphicsView::mouseMoveEvent (QMouseEvent* evt) {
+  app->drag (evt->x (), evt->y ()) ;
 }
 

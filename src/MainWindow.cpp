@@ -44,3 +44,8 @@ QSizePolicy MainWindow::sizePolicy () {
   return QSizePolicy (QSizePolicy::Fixed, QSizePolicy::Fixed) ;
 }
 
+void MainWindow::resizeEvent (QResizeEvent * evt) {
+  app->on_resize () ;
+  return QMainWindow::resizeEvent (evt) ;
+}
+

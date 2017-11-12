@@ -3,6 +3,7 @@
 #include <QUuid>
 #include <QList>
 #include <QSharedPointer>
+#include <QHash>
 
 #include <iostream>
 
@@ -15,23 +16,20 @@ class Application : public QApplication {
   Application (int & argc, char ** &argv) ;
   ~Application () ;
 
-  enum class Mirror { 
-    Normal ,
-    Flopped
-  } ;
-
-  class ImageList {
+  class ImageState {
     public :
 
-    QStringList images ;
-    int current_file_index ;
-    int steps ;
-    int current_step ;
-    bool mirrored ;
-    Mirror current_mirror ;
+    typedef QSharedPointer<ImageState> Ptr ;
 
-    ImageList () ;
-    ~ImageList () ;
+    double x, y ;
+    double z ;
+    double rot ;
+    bool mirrored ;
+
+    ImageState () ;
+    ~ImageState () ;
+
+    double scale () const ;
   } ;
 
   class Context {
@@ -42,7 +40,9 @@ class Application : public QApplication {
 
     QUuid id ;
     QDir dir ;
-    ImageList image_list ;
+    QStringList images ;
+    int current_image_index ;
+    QHash<QString,ImageState::Ptr> states ;
 
     Context () ;
     ~Context () ;
@@ -50,12 +50,31 @@ class Application : public QApplication {
 
   Context::List all_contexts ;
   Context::Ptr current_context ;
+  ImageState::Ptr current_state ;
+
+  bool move_grabbed, scale_grabbed ;
+  double grab_x, grab_y ;
+  double x1, y1 ;
 
   void dir_selected (const QDir & dir) ;
+  void state_refreshed () ;
+  void move_grab (double x, double y) ;
+  void move_ungrab (double x, double y) ;
+  void scale_grab (double x, double y) ;
+  void scale_ungrab (double x, double y) ;
+  void drag (double x, double y) ;
+
+  void on_resize () ;
+  void save_xy (double x, double y) ;
 
   signals:
     void all_contexts_changed (Context::List all_contexts) ;
     void current_context_changed (Context::Ptr current_context) ;
+    void img_translate (double dx, double dy, bool mirrored) ;
+    void img_rotate (double rotate, bool mirrored) ;
+    void img_scale (double scale, bool mirrored) ;
+    void img_mirror (bool value) ;
+    void resized () ;
 } ;
 
 #define app static_cast<Application*> (qApp)

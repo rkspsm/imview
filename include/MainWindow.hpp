@@ -13,5 +13,7 @@ class MainWindow : public QMainWindow {
 
   virtual QSize sizeHint () ;
   virtual QSizePolicy sizePolicy () ;
+
+  virtual void resizeEvent (QResizeEvent * evt) ;
 } ;
 

@@ -44,6 +44,7 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
   saveAction->setShortcut (QKeySequence (tr("ctrl+s"))) ;
   connect (saveAction, &QAction::triggered,
     [this] () {
+      /*
       auto dialog = new QDialog (this, Qt::Dialog | Qt::FramelessWindowHint) ;
       dialog->setModal (true) ;
       auto label = new QLabel () ;
@@ -53,8 +54,9 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
       label->setText ("saving...") ;
       label->setAlignment (Qt::AlignHCenter) ;
       dialog->show () ;
+      */
       app->flush_to_db ();
-      dialog->hide () ;
+      // dialog->hide () ;
     }) ;
 
   auto closeAction = fileMenu->addAction (tr("Close")) ;
@@ -169,14 +171,28 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
     [get_step_mode] () { app->on_prevImage (get_step_mode ()) ; }) ;
 
   auto jumpImageAction = activitiesMenu->addAction (tr ("Jump")) ;
-  jumpImageAction->setShortcut (QKeySequence (tr("ctrl+j"))) ;
+  //jumpImageAction->setShortcut (QKeySequence (tr("ctrl+j"))) ;
   connect (jumpImageAction, &QAction::triggered,
     [this] () {
       bool ok = false ;
       int result = QInputDialog::getInt (
-        this, "Jump", "Steps", 1, -9999999, 9999999, 1, &ok) ;
+        this, "Jump", "Steps", 0, -9999999, 9999999, 1, &ok) ;
       if (ok) {
         app->on_imgJump (result) ;
+      }
+    }) ;
+
+  auto jumpSpecificAction = activitiesMenu->addAction (tr ("Jump Specific")) ;
+  connect (jumpSpecificAction, &QAction::triggered,
+    [this] () {
+      bool ok = false ;
+      int imax = app->num_images () ;
+      if (imax > 0) {
+        int result = QInputDialog::getInt (
+          this, "Jump Specific", "Target", 0, 0, imax, 1, &ok) ;
+        if (ok) {
+          app->on_imgJumpSpecific (result) ;
+        }
       }
     }) ;
 

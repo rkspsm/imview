@@ -331,6 +331,34 @@ void Application::on_imgJump (int steps) {
   }
 }
 
+int Application::num_images () {
+  if (current_context) {
+    return current_context->images.size () ;
+  } else {
+    return -1 ;
+  }
+}
+
+void Application::on_imgJumpSpecific (int target) {
+  if (current_context) {
+    int old_index = current_context->current_image_index ;
+    int new_index = target ;
+    if (new_index < 0) { new_index = 0 ; }
+    if (new_index >= current_context->images.size ()) {
+      new_index = current_context->images.size () - 1 ;
+    }
+
+    if (new_index != old_index and new_index >= 0) {
+      current_context->current_image_index = new_index ;
+      state_refreshed (true) ;
+      emit current_img_changed (current_context) ;
+      state_refreshed () ;
+      state_is_dirty () ;
+      return ;
+    }
+  }
+}
+
 void Application::on_mirrorToggle () {
   if (current_state) {
     bool & val = current_state->mirrored ;
@@ -585,8 +613,10 @@ void Application::flush_to_db () {
     return true ;
   } ;
 
-  sendPostedEvents () ;
-  processEvents () ;
+  // sendPostedEvents () ; processEvents () ;
+
+  query.exec ("begin transaction") ;
+  if (!check ()) { return ; }
 
   query.exec ("delete from current_context_id") ;
   if (current_context) {
@@ -613,8 +643,7 @@ void Application::flush_to_db () {
     query.bindValue (":context_id", ctx_id) ;
     query.exec () ;
 
-    sendPostedEvents () ;
-    processEvents () ;
+    // sendPostedEvents () ; processEvents () ;
   }
 
   deleted_contexts.clear () ;
@@ -626,8 +655,7 @@ void Application::flush_to_db () {
   while (query.next ()) {
     saved_ctxs.insert (query.value (0).toUuid ()) ;
   }
-  sendPostedEvents () ;
-  processEvents () ;
+  // sendPostedEvents () ; processEvents () ;
 
   if (!check ()) { return ; }
 
@@ -643,8 +671,7 @@ void Application::flush_to_db () {
         query.bindValue (":context_id", ctx->id) ;
         query.bindValue (":current_image_index", ctx->current_image_index) ;
         query.exec () ;
-        sendPostedEvents () ;
-        processEvents () ;
+        // sendPostedEvents () ; processEvents () ;
 
         if (!check ()) { return ; }
 
@@ -655,8 +682,7 @@ void Application::flush_to_db () {
         while (query.next ()) {
           saved_states.insert (query.value (0).toInt ()) ;
         }
-        sendPostedEvents () ;
-        processEvents () ;
+        // sendPostedEvents () ; processEvents () ;
 
         if (!check ()) { return ; }
 
@@ -676,8 +702,7 @@ void Application::flush_to_db () {
             query.bindValue (":state_mirrored", state->mirrored) ;
             query.bindValue (":state_pristine", state->pristine) ;
             query.exec () ;
-            sendPostedEvents () ;
-            processEvents () ;
+            // sendPostedEvents () ; processEvents () ;
           } else {
             query.prepare ("insert into image_state values (:context_id, :image_index, :state_x, :state_y, :state_z, :state_rot, :state_mirrored, :state_pristine)") ;
             query.bindValue (":context_id", ctx->id) ;
@@ -689,8 +714,7 @@ void Application::flush_to_db () {
             query.bindValue (":state_mirrored", state->mirrored) ;
             query.bindValue (":state_pristine", state->pristine) ;
             query.exec () ;
-            sendPostedEvents () ;
-            processEvents () ;
+            // sendPostedEvents () ; processEvents () ;
           }
         }
 
@@ -714,8 +738,7 @@ void Application::flush_to_db () {
           query.bindValue (":index", img_index) ;
           query.bindValue (":image", img_name) ;
           query.exec () ;
-          sendPostedEvents () ;
-          processEvents () ;
+          // sendPostedEvents () ; processEvents () ;
 
           if (ctx->states.contains (img_index)) {
             auto state = ctx->states[img_index] ;
@@ -730,8 +753,7 @@ void Application::flush_to_db () {
             query.bindValue (":state_mirrored", state->mirrored) ;
             query.bindValue (":state_pristine", state->pristine) ;
             query.exec () ;
-            sendPostedEvents () ;
-            processEvents () ;
+            // sendPostedEvents () ; processEvents () ;
           }
         }
 
@@ -741,6 +763,9 @@ void Application::flush_to_db () {
   }
 
   dirty_contexts.clear () ;
+
+  query.exec ("end transaction") ;
+  if (!check ()) { return ; }
 }
 
 int Application::exec (QWidget * widget) {

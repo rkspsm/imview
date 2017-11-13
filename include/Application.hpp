@@ -94,6 +94,8 @@ class Application : public QApplication {
   void on_nextImage (StepMode mode) ;
   void on_prevImage (StepMode mode) ;
   void on_imgJump (int step) ;
+  int num_images () ;
+  void on_imgJumpSpecific (int target) ;
   void save_xy (double x, double y) ;
   void on_context_selection (QUuid id) ;
   void on_context_deletion (QUuid id) ;

@@ -105,6 +105,7 @@ void Application::dir_selected (const QDir & dir) {
 
   all_contexts.push_back (new_context) ;
   current_context = new_context ;
+  context_is_dirty () ;
 
   state_refreshed (true) ;
 
@@ -159,6 +160,7 @@ void Application::move_grab (double x, double y) {
 
 void Application::move_ungrab (double x, double y) {
   move_grabbed = false ;
+  state_is_dirty () ;
 }
 
 void Application::scale_grab (double x, double y) {
@@ -169,6 +171,7 @@ void Application::scale_grab (double x, double y) {
 
 void Application::scale_ungrab (double x, double y) {
   scale_grabbed = false ;
+  state_is_dirty () ;
 }
 
 void Application::save_xy (double x, double y) {
@@ -176,6 +179,7 @@ void Application::save_xy (double x, double y) {
     current_state->x = x ;
     current_state->y = y ;
     current_state->pristine = false ;
+    state_is_dirty () ;
   }
 }
 
@@ -238,6 +242,7 @@ void Application::on_nextImage (Application::StepMode mode) {
     if (current_state && mode != SM::sm_Normal) {
       if (close_to_mode_angle (current_state->rot, mode) && 
           (! current_state->mirrored)) {
+        state_is_dirty () ;
         return on_mirrorToggle () ;
       }
     }
@@ -250,6 +255,7 @@ void Application::on_nextImage (Application::StepMode mode) {
       state_refreshed (true) ;
       emit current_img_changed (current_context) ;
       state_refreshed () ;
+      state_is_dirty () ;
       return ;
     }
   }
@@ -262,6 +268,7 @@ void Application::on_prevImage (Application::StepMode mode) {
     if (current_state && mode != SM::sm_Normal) {
       if (close_to_mode_angle (current_state->rot, mode) && 
           (current_state->mirrored)) {
+        state_is_dirty () ;
         return on_mirrorToggle () ;
       }
     }
@@ -279,6 +286,7 @@ void Application::on_prevImage (Application::StepMode mode) {
       }
       emit current_img_changed (current_context) ;
       state_refreshed () ;
+      state_is_dirty () ;
       return ;
     }
   }
@@ -289,6 +297,7 @@ void Application::on_mirrorToggle () {
     bool & val = current_state->mirrored ;
     val = !val ;
     emit img_mirror (val) ;
+    state_is_dirty () ;
   }
 }
 
@@ -297,6 +306,10 @@ void Application::on_rotation (double value) {
     current_state->rot = value ;
     emit img_rotate (value) ;
   }
+}
+
+void Application::on_discrete_rotation () {
+  state_is_dirty () ;
 }
 
 void Application::drag (double x2, double y2) {
@@ -362,6 +375,7 @@ void Application::on_context_deletion (QUuid id) {
   auto target_id = target->id ;
   auto current_id = current_context->id ;
 
+  deleted_contexts.insert (all_contexts.at (t_i)->id) ;
   all_contexts.removeAt (t_i) ;
 
   if (target_id == current_id) {
@@ -388,6 +402,21 @@ void Application::on_context_deletion (QUuid id) {
   
 }
 
+void Application::context_is_dirty (Context::Ptr ctx) {
+  if (!ctx) { ctx = current_context; }
+  if (ctx) {
+    dirty_contexts.insert (ctx->id) ;
+  }
+}
+
+void Application::state_is_dirty (int index) {
+  if (current_context) {
+    context_is_dirty () ;
+    if (index == -1) { index = current_context->current_image_index ; }
+    if (index >= 0) { current_context->dirty_states.insert (index) ; }
+  }
+}
+
 bool setup_db (const QString & file) {
   auto db = QSqlDatabase::addDatabase ("QSQLITE") ;
   db.setDatabaseName (file) ;
@@ -401,7 +430,7 @@ bool setup_db (const QString & file) {
       query.exec ("insert into version values ('0.0.1')") ;
       query.exec ("create table current_context_id (value blob)") ;
       query.exec ("create table context (id blob, dir varchar, current_image_index int)") ;
-      query.exec ("create table context_mem_images (context_id blob, index int, image varchar)") ;
+      query.exec ("create table context_mem_images (context_id blob, img_index int, image varchar)") ;
       query.exec ("create table image_state (context_id blob, image_index int, x real, y real, z real, rot real, mirrored bool, pristine bool)") ;
 
       if (query.lastError ().isValid ()) {
@@ -530,7 +559,7 @@ void Application::flush_to_db () {
 
         query.prepare ("insert into context values (:context_id, :context_dir, :current_image_index)") ;
         query.bindValue (":context_id", ctx->id) ;
-        query.bindValue (":contxt_dir", ctx->dir.absolutePath ()) ;
+        query.bindValue (":context_dir", ctx->dir.absolutePath ()) ;
         query.bindValue (":current_image_index", ctx->current_image_index) ;
         query.exec () ;
 
@@ -543,6 +572,7 @@ void Application::flush_to_db () {
           query.bindValue (":context_id", ctx->id) ;
           query.bindValue (":index", img_index) ;
           query.bindValue (":image", img_name) ;
+          query.exec () ;
 
           if (ctx->states.contains (img_index)) {
             auto state = ctx->states[img_index] ;

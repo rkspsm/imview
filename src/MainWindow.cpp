@@ -26,7 +26,6 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
   auto fileMenu = menuBar ()->addMenu (tr("&File")) ;
 
   auto newAction = fileMenu->addAction (tr("&New")) ;
-
   connect (newAction, &QAction::triggered,
     [this] () {
       auto dir = QFileDialog::getExistingDirectory (
@@ -37,6 +36,10 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
         app->dir_selected (QDir (dir)) ;
       }
     }) ;
+
+  auto saveAction = fileMenu->addAction (tr("&Save")) ;
+  connect (saveAction, &QAction::triggered,
+    [] () { app->flush_to_db (); }) ;
 
   auto closeAction = fileMenu->addAction (tr("Close")) ;
   connect (closeAction, &QAction::triggered,
@@ -80,6 +83,9 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
       qreal value = ((qreal) _value) / 2.0f ;
       app->on_rotation (value) ;
     }) ;
+
+  connect (rotSlider, &QSlider::sliderReleased,
+    [] () { app->on_discrete_rotation () ; }) ;
 
   connect (app, &Application::img_rotate,
     [rotSlider] (double value) {

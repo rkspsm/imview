@@ -87,6 +87,7 @@ class Application : public QApplication {
 
   void on_resize () ;
   void on_rotation (double value) ;
+  void on_discrete_rotation () ;
   void on_mirrorToggle () ;
   void on_nextImage (StepMode mode) ;
   void on_prevImage (StepMode mode) ;
@@ -95,6 +96,9 @@ class Application : public QApplication {
   void on_context_deletion (QUuid id) ;
 
   void flush_to_db () ;
+
+  void context_is_dirty (Context::Ptr ctx = nullptr) ;
+  void state_is_dirty (int index = -1) ;
 
   signals:
     void all_contexts_changed (Context::List all_contexts) ;

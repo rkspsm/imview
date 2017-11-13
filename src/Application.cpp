@@ -4,6 +4,7 @@
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QSetIterator>
+#include <QTimer>
 
 #include <QtMath>
 #include <cmath>
@@ -56,6 +57,16 @@ Application::Context::Context ()
   , current_image_index (0)
 { }
 
+Application::Context::Context (
+  QUuid id,
+  QDir dir,
+  int current_image_index )
+:
+  id (id),
+  dir (dir),
+  current_image_index (current_image_index)
+{ }
+
 bool Application::Context::operator == (const Application::Context & other) {
   return id == other.id ;
 }
@@ -84,6 +95,13 @@ Application::ImageState::ImageState () :
   , pristine (true)
 { }
 
+Application::ImageState::ImageState (
+  double x, double y, double z,
+  double rot, bool mirrored, bool pristine )
+:
+  x (x), y (y), z (z), rot (rot), mirrored (mirrored), pristine (pristine)
+{ }
+
 double Application::ImageState::scale () const { return 1.0f/z ; }
 
 void Application::dir_selected (const QDir & dir) {
@@ -107,6 +125,15 @@ void Application::dir_selected (const QDir & dir) {
   current_context = new_context ;
   context_is_dirty () ;
 
+  state_refreshed (true) ;
+
+  emit all_contexts_changed (all_contexts) ;
+  emit current_context_changed (current_context) ;
+
+  state_refreshed () ;
+}
+
+void Application::on_startup () {
   state_refreshed (true) ;
 
   emit all_contexts_changed (all_contexts) ;
@@ -446,6 +473,92 @@ bool setup_db (const QString & file) {
   return true ;
 }
 
+bool Application::read_from_db () {
+  QSqlQuery query ;
+
+  auto check = [this, &query] () {
+    if (query.lastError ().isValid ()) {
+      cerr << "Error in flush_to_db : " << endl ;
+      cerr << query.lastError ().text () << endl ;
+      quit () ;
+      return false ;
+    }
+
+    return true ;
+  } ;
+
+  query.exec ("select * from context") ;
+
+  if (!check ()) { return false; }
+
+  QHash<QUuid,Context::Ptr> ctxmap ;
+
+  while (query.next ()) {
+    QUuid id = query.value (0).toUuid () ;
+    QDir dir (query.value (1).toString ()) ;
+    int current_image_index = query.value (2).toInt () ;
+
+    auto ctx = Context::Ptr::create (id, dir, current_image_index) ;
+    all_contexts.push_back (ctx) ;
+    ctxmap[id] = ctx ;
+  }
+
+  if (all_contexts.size () == 0) { return true ; }
+
+  QUuid current_ctx_id ;
+  query.exec ("select * from current_context_id") ;
+  if (!check ()) { return false; }
+
+  while (query.next ()) {
+    current_ctx_id = query.value (0).toUuid () ;
+  }
+
+  if (ctxmap.contains (current_ctx_id)) {
+    current_context = ctxmap[current_ctx_id] ;
+  } else { 
+    current_context = all_contexts.at (0) ;
+  }
+
+  query.exec ("select * from context_mem_images order by img_index asc") ;
+  if (!check ()) { return false; }
+
+  while (query.next ()) {
+    auto ctx_id = query.value (0).toUuid () ;
+    auto img_index = query.value (1).toInt () ;
+    auto image_filename = query.value (2).toString () ;
+
+    auto ctx = ctxmap[ctx_id] ;
+    ctx->images.push_back (image_filename) ;
+    if (ctx->images.size () != img_index + 1) {
+      return false ;
+    }
+  }
+
+  query.exec ("select * from image_state") ;
+  if (!check ()) { return false; }
+  while (query.next ()) {
+    auto ctx_id = query.value (0).toUuid () ;
+    if (ctxmap.contains (ctx_id)) {
+      auto ctx = ctxmap[ctx_id] ;
+      auto img_idx = query.value (1).toInt () ;
+      auto x = query.value (2).toDouble () ;
+      auto y = query.value (3).toDouble () ;
+      auto z = query.value (4).toDouble () ;
+      auto rot = query.value (5).toDouble () ;
+      auto mirrored = query.value (6).toBool () ;
+      auto pristine = query.value (7).toBool () ;
+
+      ctx->states.insert (img_idx,
+        ImageState::Ptr::create (x, y, z, rot, mirrored, pristine)) ;
+    } else {
+      cerr << "invalid ctx_id in images : " << ctx_id.toString () << endl ;
+      return false ;
+    }
+  }
+
+  return true ;
+}
+
 void Application::flush_to_db () {
   QSqlQuery query ;
 
@@ -608,7 +721,15 @@ int Application::exec (QWidget * widget) {
     if (! setup_db (sqlite_file)) {
       cerr << "Failed to setup database : " << sqlite_file << endl ;
       return EXIT_FAILURE ;
-    } else {
+    } else if (! read_from_db ()) {
+      cerr << "Failed to read database : " << sqlite_file << endl ;
+      return EXIT_FAILURE ;
+    }else {
+      auto timer = new QTimer (this) ;
+      timer->setSingleShot (true) ;
+      timer->setInterval (0) ;
+      connect (timer, &QTimer::timeout, this, &Application::on_startup) ;
+      timer->start () ;
       widget->show () ;
       return QApplication::exec () ;
     }

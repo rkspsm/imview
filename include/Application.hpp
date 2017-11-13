@@ -40,6 +40,7 @@ class Application : public QApplication {
     bool pristine ;
 
     ImageState () ;
+    ImageState (double x, double y, double z, double rot, bool mirrored, bool pristine) ;
     ~ImageState () ;
 
     double scale () const ;
@@ -60,6 +61,7 @@ class Application : public QApplication {
     QSet<int> dirty_states ;
 
     Context () ;
+    Context (QUuid id, QDir dir, int current_image_index) ;
     ~Context () ;
     bool operator == (const Context &other) ;
 
@@ -96,6 +98,7 @@ class Application : public QApplication {
   void on_context_deletion (QUuid id) ;
 
   void flush_to_db () ;
+  bool read_from_db () ;
 
   void context_is_dirty (Context::Ptr ctx = nullptr) ;
   void state_is_dirty (int index = -1) ;
@@ -110,6 +113,9 @@ class Application : public QApplication {
     void img_scale (double scale) ;
     void img_mirror (bool value) ;
     void resized () ;
+
+  public slots :
+  void on_startup () ;
 } ;
 
 #define app static_cast<Application*> (qApp)

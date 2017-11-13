@@ -13,6 +13,9 @@
 #include <QRadioButton>
 #include <QButtonGroup>
 #include <QKeySequence>
+#include <QDialog>
+#include <QStackedLayout>
+#include <QInputDialog>
 
 using std::cerr ;
 using std::endl ;
@@ -38,8 +41,21 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
     }) ;
 
   auto saveAction = fileMenu->addAction (tr("&Save")) ;
+  saveAction->setShortcut (QKeySequence (tr("ctrl+s"))) ;
   connect (saveAction, &QAction::triggered,
-    [] () { app->flush_to_db (); }) ;
+    [this] () {
+      auto dialog = new QDialog (this, Qt::Dialog | Qt::FramelessWindowHint) ;
+      dialog->setModal (true) ;
+      auto label = new QLabel () ;
+      auto layout = new QStackedLayout () ;
+      layout->addWidget (label) ;
+      dialog->setLayout (layout) ;
+      label->setText ("saving...") ;
+      label->setAlignment (Qt::AlignHCenter) ;
+      dialog->show () ;
+      app->flush_to_db ();
+      dialog->hide () ;
+    }) ;
 
   auto closeAction = fileMenu->addAction (tr("Close")) ;
   connect (closeAction, &QAction::triggered,
@@ -151,6 +167,18 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
   prevImageAction->setShortcut (QKeySequence (tr("a"))) ;
   connect (prevImageAction, &QAction::triggered,
     [get_step_mode] () { app->on_prevImage (get_step_mode ()) ; }) ;
+
+  auto jumpImageAction = activitiesMenu->addAction (tr ("Jump")) ;
+  jumpImageAction->setShortcut (QKeySequence (tr("ctrl+j"))) ;
+  connect (jumpImageAction, &QAction::triggered,
+    [this] () {
+      bool ok = false ;
+      int result = QInputDialog::getInt (
+        this, "Jump", "Steps", 1, -9999999, 9999999, 1, &ok) ;
+      if (ok) {
+        app->on_imgJump (result) ;
+      }
+    }) ;
 
   auto contextMenu = menuBar ()->addMenu ("Contexts") ;
 

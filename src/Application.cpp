@@ -319,6 +319,18 @@ void Application::on_prevImage (Application::StepMode mode) {
   }
 }
 
+void Application::on_imgJump (int steps) {
+  if (current_context) {
+    if (current_context->step_image_index (steps)) {
+      state_refreshed (true) ;
+      emit current_img_changed (current_context) ;
+      state_refreshed () ;
+      state_is_dirty () ;
+      return ;
+    }
+  }
+}
+
 void Application::on_mirrorToggle () {
   if (current_state) {
     bool & val = current_state->mirrored ;
@@ -573,6 +585,9 @@ void Application::flush_to_db () {
     return true ;
   } ;
 
+  sendPostedEvents () ;
+  processEvents () ;
+
   query.exec ("delete from current_context_id") ;
   if (current_context) {
     query.prepare ("insert into current_context_id values (:context_id)") ;
@@ -597,6 +612,9 @@ void Application::flush_to_db () {
     query.prepare ("delete from context where id=:context_id") ;
     query.bindValue (":context_id", ctx_id) ;
     query.exec () ;
+
+    sendPostedEvents () ;
+    processEvents () ;
   }
 
   deleted_contexts.clear () ;
@@ -608,6 +626,8 @@ void Application::flush_to_db () {
   while (query.next ()) {
     saved_ctxs.insert (query.value (0).toUuid ()) ;
   }
+  sendPostedEvents () ;
+  processEvents () ;
 
   if (!check ()) { return ; }
 
@@ -623,6 +643,8 @@ void Application::flush_to_db () {
         query.bindValue (":context_id", ctx->id) ;
         query.bindValue (":current_image_index", ctx->current_image_index) ;
         query.exec () ;
+        sendPostedEvents () ;
+        processEvents () ;
 
         if (!check ()) { return ; }
 
@@ -633,6 +655,8 @@ void Application::flush_to_db () {
         while (query.next ()) {
           saved_states.insert (query.value (0).toInt ()) ;
         }
+        sendPostedEvents () ;
+        processEvents () ;
 
         if (!check ()) { return ; }
 
@@ -652,6 +676,8 @@ void Application::flush_to_db () {
             query.bindValue (":state_mirrored", state->mirrored) ;
             query.bindValue (":state_pristine", state->pristine) ;
             query.exec () ;
+            sendPostedEvents () ;
+            processEvents () ;
           } else {
             query.prepare ("insert into image_state values (:context_id, :image_index, :state_x, :state_y, :state_z, :state_rot, :state_mirrored, :state_pristine)") ;
             query.bindValue (":context_id", ctx->id) ;
@@ -663,6 +689,8 @@ void Application::flush_to_db () {
             query.bindValue (":state_mirrored", state->mirrored) ;
             query.bindValue (":state_pristine", state->pristine) ;
             query.exec () ;
+            sendPostedEvents () ;
+            processEvents () ;
           }
         }
 
@@ -686,6 +714,8 @@ void Application::flush_to_db () {
           query.bindValue (":index", img_index) ;
           query.bindValue (":image", img_name) ;
           query.exec () ;
+          sendPostedEvents () ;
+          processEvents () ;
 
           if (ctx->states.contains (img_index)) {
             auto state = ctx->states[img_index] ;
@@ -700,6 +730,8 @@ void Application::flush_to_db () {
             query.bindValue (":state_mirrored", state->mirrored) ;
             query.bindValue (":state_pristine", state->pristine) ;
             query.exec () ;
+            sendPostedEvents () ;
+            processEvents () ;
           }
         }
 

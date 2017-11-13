@@ -136,9 +136,9 @@ QSizePolicy GraphicsView::sizePolicy () {
 void GraphicsView::mousePressEvent (QMouseEvent* evt) {
   switch (evt->button ()) {
     case Qt::LeftButton :
+    case Qt::MiddleButton :
       app->move_grab (evt->x (), evt->y ()) ;
       break ;
-    case Qt::MiddleButton :
     case Qt::RightButton :
       app->scale_grab (evt->x (), evt->y ()) ;
       break ;
@@ -148,9 +148,9 @@ void GraphicsView::mousePressEvent (QMouseEvent* evt) {
 void GraphicsView::mouseReleaseEvent (QMouseEvent* evt) {
   switch (evt->button ()) {
     case Qt::LeftButton :
+    case Qt::MiddleButton :
       app->move_ungrab (evt->x (), evt->y ()) ;
       break ;
-    case Qt::MiddleButton :
     case Qt::RightButton :
       app->scale_ungrab (evt->x (), evt->y ()) ;
       break ;

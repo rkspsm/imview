@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QMainWindow>
+#include <QCheckBox>
 
 class MainWindow : public QMainWindow {
 
@@ -13,7 +14,9 @@ class MainWindow : public QMainWindow {
 
   virtual QSize sizeHint () ;
   virtual QSizePolicy sizePolicy () ;
-
   virtual void resizeEvent (QResizeEvent * evt) ;
+  virtual void changeEvent (QEvent * evt) ;
+
+  QCheckBox * autosave ;
 } ;
 

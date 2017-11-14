@@ -16,6 +16,7 @@
 #include <QDialog>
 #include <QStackedLayout>
 #include <QInputDialog>
+#include <QStatusBar>
 
 using std::cerr ;
 using std::endl ;
@@ -218,7 +219,9 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
       }
     }) ;
 
-  statusBar () ;
+  autosave = new QCheckBox ("Autosave ?", statusBar ()) ;
+  autosave->setChecked (false) ;
+  statusBar ()->addPermanentWidget (autosave) ;
 }
 
 QSize MainWindow::sizeHint () {
@@ -232,5 +235,16 @@ QSizePolicy MainWindow::sizePolicy () {
 void MainWindow::resizeEvent (QResizeEvent * evt) {
   app->on_resize () ;
   return QMainWindow::resizeEvent (evt) ;
+}
+
+void MainWindow::changeEvent (QEvent * evt) {
+  if (evt->type () == QEvent::ActivationChange) {
+    if (isActiveWindow () == false && autosave->isChecked ()) {
+      statusBar ()->showMessage ("saving...", 20000) ;
+      app->flush_to_db () ;
+      statusBar ()->clearMessage () ;
+      statusBar ()->showMessage ("done...", 2000) ;
+    }
+  }
 }
 

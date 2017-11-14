@@ -50,21 +50,58 @@ Application::Application (int & argc, char ** &argv)
   //dbg () ;
 }
 
+int stepmode_to_int (Application::StepMode mode) {
+  switch (mode) {
+    case Application::StepMode::sm_Normal :
+      return 0;
+    case Application::StepMode::sm_15 :
+      return 15 ;
+    case Application::StepMode::sm_22_5 :
+      return 225 ;
+    case Application::StepMode::sm_30 :
+      return 30 ;
+    case Application::StepMode::sm_45 :
+      return 45 ;
+    default :
+      return -1 ;
+  }
+}
+
+Application::StepMode int_to_stepmode (int iMode) {
+  switch (iMode) {
+    case 0 :
+      return Application::StepMode::sm_Normal ;
+    case 15 :
+      return Application::StepMode::sm_15 ;
+    case 225 :
+      return Application::StepMode::sm_22_5 ;
+    case 30 :
+      return Application::StepMode::sm_30 ;
+    case 45 :
+      return Application::StepMode::sm_45 ;
+    default :
+      return Application::StepMode::sm_Normal ;
+  }
+}
+
 Application::Context::~Context () { }
 
 Application::Context::Context ()
   : id (QUuid::createUuid ()) 
   , current_image_index (0)
+  , stepMode (Application::StepMode::sm_Normal)
 { }
 
 Application::Context::Context (
   QUuid id,
   QDir dir,
-  int current_image_index )
+  int current_image_index,
+  Application::StepMode stepMode)
 :
   id (id),
   dir (dir),
-  current_image_index (current_image_index)
+  current_image_index (current_image_index),
+  stepMode (stepMode)
 { }
 
 bool Application::Context::operator == (const Application::Context & other) {
@@ -262,9 +299,10 @@ bool nextAngle (double & angle, Application::StepMode mode, bool backwards = fal
   return true ;
 }
 
-void Application::on_nextImage (Application::StepMode mode) {
+void Application::on_nextImage () {
   typedef Application::StepMode SM ;
   if (current_context) {
+    auto mode = current_context->stepMode ;
 
     if (current_state && mode != SM::sm_Normal) {
       if (close_to_mode_angle (current_state->rot, mode) && 
@@ -288,9 +326,10 @@ void Application::on_nextImage (Application::StepMode mode) {
   }
 }
 
-void Application::on_prevImage (Application::StepMode mode) {
+void Application::on_prevImage () {
   typedef Application::StepMode SM ;
   if (current_context) {
+    auto mode = current_context->stepMode ;
 
     if (current_state && mode != SM::sm_Normal) {
       if (close_to_mode_angle (current_state->rot, mode) && 
@@ -315,6 +354,15 @@ void Application::on_prevImage (Application::StepMode mode) {
       state_refreshed () ;
       state_is_dirty () ;
       return ;
+    }
+  }
+}
+
+void Application::on_stepModeChange (Application::StepMode mode) {
+  if (current_context) {
+    if (current_context->stepMode != mode) {
+      current_context->stepMode = mode ;
+      context_is_dirty () ;
     }
   }
 }
@@ -496,7 +544,7 @@ bool setup_db (const QString & file) {
       query.exec ("create table version (value varchar(256))") ;
       query.exec ("insert into version values ('0.0.1')") ;
       query.exec ("create table current_context_id (value blob)") ;
-      query.exec ("create table context (id blob, dir varchar, current_image_index int)") ;
+      query.exec ("create table context (id blob, dir varchar, current_image_index int, step_mode int)") ;
       query.exec ("create table context_mem_images (context_id blob, img_index int, image varchar)") ;
       query.exec ("create table image_state (context_id blob, image_index int, x real, y real, z real, rot real, mirrored bool, pristine bool)") ;
 
@@ -537,8 +585,10 @@ bool Application::read_from_db () {
     QUuid id = query.value (0).toUuid () ;
     QDir dir (query.value (1).toString ()) ;
     int current_image_index = query.value (2).toInt () ;
+    int stepMode = query.value (3).toInt () ;
 
-    auto ctx = Context::Ptr::create (id, dir, current_image_index) ;
+    auto ctx = Context::Ptr::create (id, dir, current_image_index,
+      int_to_stepmode (stepMode)) ;
     all_contexts.push_back (ctx) ;
     ctxmap[id] = ctx ;
   }
@@ -667,9 +717,10 @@ void Application::flush_to_db () {
 
       if (saved_ctxs.contains (ctx->id)) {
 
-        query.prepare ("update context set current_image_index=:current_image_index where id=:context_id") ;
+        query.prepare ("update context set current_image_index=:current_image_index , step_mode=:step_mode where id=:context_id") ;
         query.bindValue (":context_id", ctx->id) ;
         query.bindValue (":current_image_index", ctx->current_image_index) ;
+        query.bindValue (":step_mode", stepmode_to_int (ctx->stepMode)) ;
         query.exec () ;
         // sendPostedEvents () ; processEvents () ;
 
@@ -722,10 +773,11 @@ void Application::flush_to_db () {
 
       } else {
 
-        query.prepare ("insert into context values (:context_id, :context_dir, :current_image_index)") ;
+        query.prepare ("insert into context values (:context_id, :context_dir, :current_image_index, :step_mode)") ;
         query.bindValue (":context_id", ctx->id) ;
         query.bindValue (":context_dir", ctx->dir.absolutePath ()) ;
         query.bindValue (":current_image_index", ctx->current_image_index) ;
+        query.bindValue (":step_mode", stepmode_to_int (ctx->stepMode)) ;
         query.exec () ;
 
         if (!check ()) { return ; }

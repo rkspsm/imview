@@ -124,6 +124,7 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
   auto smartNavigationToolbar = new QToolBar ("Smart Navigation") ;
   addToolBar (Qt::BottomToolBarArea, smartNavigationToolbar) ;
 
+  // FIXME: using hardcoded values for now, but prefer use app->stepmode_to_int
   auto snr_normal = new QRadioButton ("Normal") ;
   snr_normal->setChecked (true) ;
   auto snr_15 = new QRadioButton ("15") ;
@@ -144,32 +145,30 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
   smartNavigationToolbar->addWidget (snr_30) ;
   smartNavigationToolbar->addWidget (snr_45) ;
 
-  auto get_step_mode = [snr_group] () {
-    switch (snr_group->checkedId ()) {
-      case 0 :
-        return Application::StepMode::sm_Normal ;
-      case 15 :
-        return Application::StepMode::sm_15 ;
-      case 225 :
-        return Application::StepMode::sm_22_5 ;
-      case 30 :
-        return Application::StepMode::sm_30 ;
-      case 45 :
-        return Application::StepMode::sm_45 ;
-      default :
-        return Application::StepMode::sm_Normal ;
-    }
-  } ;
-
   auto nextImageAction = activitiesMenu->addAction (tr ("Next Image")) ;
   nextImageAction->setShortcut (QKeySequence (tr("d"))) ;
   connect (nextImageAction, &QAction::triggered, 
-    [get_step_mode] () { app->on_nextImage (get_step_mode ()) ; }) ;
+    [] () { app->on_nextImage () ; }) ;
 
   auto prevImageAction = activitiesMenu->addAction (tr ("Previous Image")) ;
   prevImageAction->setShortcut (QKeySequence (tr("a"))) ;
   connect (prevImageAction, &QAction::triggered,
-    [get_step_mode] () { app->on_prevImage (get_step_mode ()) ; }) ;
+    [] () { app->on_prevImage () ; }) ;
+
+  connect (snr_group,
+    static_cast<void(QButtonGroup::*) (int,bool)> (&QButtonGroup::buttonToggled),
+    [] (int id, bool checked) {
+      if (checked) {
+        app->on_stepModeChange (int_to_stepmode (id)) ;
+      }
+    }) ;
+
+  connect (app, &Application::current_context_changed,
+    [snr_group] (Application::Context::Ptr ctx) {
+      if (ctx) {
+        snr_group->button (stepmode_to_int (ctx->stepMode))->setChecked (true) ;
+      }
+    }) ;
 
   auto jumpImageAction = activitiesMenu->addAction (tr ("Jump")) ;
   //jumpImageAction->setShortcut (QKeySequence (tr("ctrl+j"))) ;

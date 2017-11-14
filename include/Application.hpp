@@ -57,11 +57,12 @@ class Application : public QApplication {
     QStringList images ;
     int current_image_index ;
     QHash<int,ImageState::Ptr> states ;
+    StepMode stepMode ;
 
     QSet<int> dirty_states ;
 
     Context () ;
-    Context (QUuid id, QDir dir, int current_image_index) ;
+    Context (QUuid id, QDir dir, int current_image_index, StepMode mode) ;
     ~Context () ;
     bool operator == (const Context &other) ;
 
@@ -91,8 +92,9 @@ class Application : public QApplication {
   void on_rotation (double value) ;
   void on_discrete_rotation () ;
   void on_mirrorToggle () ;
-  void on_nextImage (StepMode mode) ;
-  void on_prevImage (StepMode mode) ;
+  void on_nextImage () ;
+  void on_prevImage () ;
+  void on_stepModeChange (StepMode mode) ;
   void on_imgJump (int step) ;
   int num_images () ;
   void on_imgJumpSpecific (int target) ;
@@ -125,4 +127,7 @@ class Application : public QApplication {
 
 std::ostream& operator << (std::ostream & out, const QPoint x) ;
 std::ostream& operator << (std::ostream & out, const QPointF x) ;
+
+int stepmode_to_int (Application::StepMode mode) ;
+Application::StepMode int_to_stepmode (int imode) ;
 

@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.9)
+cmake_minimum_required (VERSION 3.10)
 
 project (image-viewer-2)
 
@@ -16,6 +16,8 @@ add_executable (imview
   src/MainWindow.cpp
   include/GraphicsView.hpp
   src/GraphicsView.cpp
+  include/ContextTransformDialog.hpp
+  src/ContextTransformDialog.cpp
   src/main.cpp
 )
 

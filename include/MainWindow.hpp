@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ContextTransformDialog.hpp"
+
 #include <QMainWindow>
 #include <QCheckBox>
 
@@ -18,5 +20,6 @@ class MainWindow : public QMainWindow {
   virtual void changeEvent (QEvent * evt) ;
 
   QCheckBox * autosave ;
+  ContextTransformDialog * ctxTransDialog ;
 } ;
 

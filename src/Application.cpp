@@ -420,6 +420,7 @@ void Application::on_rotation (double value) {
   if (current_state) {
     current_state->rot = value ;
     emit img_rotate (value) ;
+    state_is_dirty () ;
   }
 }
 
@@ -515,6 +516,28 @@ void Application::on_context_deletion (QUuid id) {
     emit all_contexts_changed (all_contexts) ;
   }
   
+}
+
+void Application::on_context_wide_rot_mirror (double rot, bool mirror) {
+  if (current_context) {
+    auto ctx = current_context ;
+    for (int i = 0 ; i < ctx->images.size () ; i++) {
+      ImageState::Ptr state ;
+      if (ctx->states.contains (i)) {
+        state = ctx->states[i] ;
+      } else {
+        state = ImageState::Ptr::create () ;
+        ctx->states[i] = state ;
+      }
+
+      state->rot = rot ;
+      state->mirrored = mirror ;
+
+      state_is_dirty (i) ;
+    }
+
+    state_refreshed () ;
+  }
 }
 
 void Application::context_is_dirty (Context::Ptr ctx) {

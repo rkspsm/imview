@@ -196,6 +196,17 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
       }
     }) ;
 
+  ctxTransDialog = new ContextTransformDialog (this) ;
+  auto ctxTransformAction = activitiesMenu->addAction (tr ("Apply Context Transform")) ;
+  connect (ctxTransformAction, &QAction::triggered,
+    [this] () {
+      this->ctxTransDialog->show () ;
+    }) ;
+  connect (ctxTransDialog, &ContextTransformDialog::applied,
+    [] (int angle, bool mirror) {
+      app->on_context_wide_rot_mirror (static_cast<double> (angle) / 2.0f, mirror) ;
+    }) ;
+
   auto contextMenu = menuBar ()->addMenu ("Contexts") ;
 
   connect (app, &Application::all_contexts_changed,
@@ -221,6 +232,8 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
   autosave = new QCheckBox ("Autosave ?", statusBar ()) ;
   autosave->setChecked (false) ;
   statusBar ()->addPermanentWidget (autosave) ;
+
+  setWindowTitle ("ImView-II") ;
 }
 
 QSize MainWindow::sizeHint () {

@@ -4,6 +4,7 @@
 
 #include <QMainWindow>
 #include <QCheckBox>
+#include <QTimer>
 
 class MainWindow : public QMainWindow {
 
@@ -21,5 +22,8 @@ class MainWindow : public QMainWindow {
 
   QCheckBox * autosave ;
   ContextTransformDialog * ctxTransDialog ;
+
+  QCheckBox * back_n_forth ;
+  QTimer * bnf1, * bnf2 ;
 } ;
 

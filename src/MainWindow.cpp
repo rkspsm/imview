@@ -233,6 +233,38 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
   autosave->setChecked (false) ;
   statusBar ()->addPermanentWidget (autosave) ;
 
+  back_n_forth = new QCheckBox ("Back-n-Forth ?", statusBar ()) ;
+  back_n_forth->setChecked (false) ;
+  statusBar ()->addPermanentWidget (back_n_forth) ;
+
+  bnf1 = new QTimer (this) ;
+  bnf2 = new QTimer (this) ;
+
+  bnf1->setSingleShot (false) ;
+  bnf2->setSingleShot (true) ;
+
+  connect (bnf1, &QTimer::timeout,
+    [this] () {
+      app->on_prevImage () ;
+      bnf2->start (250) ;
+    }) ;
+
+  connect (bnf2, &QTimer::timeout,
+    [] () {
+      app->on_nextImage () ;
+    }) ;
+
+  connect (back_n_forth, &QCheckBox::stateChanged,
+    [this] (int state) {
+      if (state == Qt::Checked) {
+        bnf2->stop () ;
+        bnf1->start (1500) ;
+      } else {
+        bnf1->stop () ;
+        bnf2->stop () ;
+      }
+    }) ;
+
   setWindowTitle ("ImView-II") ;
 }
 

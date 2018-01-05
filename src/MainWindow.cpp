@@ -245,20 +245,20 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
 
   connect (bnf1, &QTimer::timeout,
     [this] () {
-      app->on_prevImage () ;
-      bnf2->start (250) ;
+      app->on_nextImage () ;
+      bnf2->start (400) ;
     }) ;
 
   connect (bnf2, &QTimer::timeout,
     [] () {
-      app->on_nextImage () ;
+      app->on_prevImage () ;
     }) ;
 
   connect (back_n_forth, &QCheckBox::stateChanged,
     [this] (int state) {
       if (state == Qt::Checked) {
         bnf2->stop () ;
-        bnf1->start (1500) ;
+        bnf1->start (1200) ;
       } else {
         bnf1->stop () ;
         bnf2->stop () ;

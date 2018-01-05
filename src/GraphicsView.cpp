@@ -7,6 +7,7 @@
 
 using std::cerr ;
 using std::endl ;
+using std::cout ;
 
 GraphicsView::~GraphicsView () { }
 
@@ -103,6 +104,7 @@ void GraphicsView::context_refresh (Application::Context::Ptr ctx) {
   }
 
   if (! ctx) {
+    emit log_no_context () ;
     return ;
   }
 
@@ -122,6 +124,10 @@ void GraphicsView::context_refresh (Application::Context::Ptr ctx) {
     img_item->setPos (- size.width () / 2, - size.height () / 2) ;
     img_mirrored_item->setPos (- size.width () / 2, - size.height () / 2) ;
     img_mirrored_item->setVisible (false) ;
+
+    emit log_image_index (ctx->current_image_index, ctx->images.size () - 1) ;
+  } else {
+    emit log_no_images () ;
   }
 }
 

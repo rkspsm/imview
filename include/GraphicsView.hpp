@@ -26,5 +26,10 @@ class GraphicsView : public QGraphicsView {
 
   public slots :
   void context_refresh (Application::Context::Ptr context) ;
+
+  signals :
+  void log_no_context () ;
+  void log_no_images () ;
+  void log_image_index (int i, int t) ;
 } ;
 

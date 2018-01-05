@@ -21,11 +21,14 @@
 using std::cerr ;
 using std::endl ;
 
+static const char * window_title = "ImView-II" ;
+
 MainWindow::~MainWindow () { }
 
 MainWindow::MainWindow () : QMainWindow (nullptr) {
   resize (sizeHint ()) ;
-  setCentralWidget (new GraphicsView (this)) ;
+  auto gview = new GraphicsView (this) ;
+  setCentralWidget (gview) ;
 
   auto fileMenu = menuBar ()->addMenu (tr("&File")) ;
 
@@ -261,11 +264,32 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
         bnf1->start (1200) ;
       } else {
         bnf1->stop () ;
+        if (bnf2->remainingTime () != -1) {
+          app->on_prevImage () ;
+        }
         bnf2->stop () ;
       }
     }) ;
 
   setWindowTitle ("ImView-II") ;
+
+  connect (gview, &GraphicsView::log_no_context,
+    [this] () {
+      setWindowTitle (QString ("%1").arg (window_title)) ;
+    }) ;
+
+  connect (gview, &GraphicsView::log_no_images,
+    [this] () {
+      setWindowTitle (QString ("%1 (no images)").arg (window_title)) ;
+    }) ;
+
+  connect (gview, &GraphicsView::log_image_index,
+    [this] (int i, int t) {
+      setWindowTitle (QString ("%1 (%2/%3)")
+        .arg (window_title)
+        .arg (i)
+        .arg (t)) ;
+    }) ;
 }
 
 QSize MainWindow::sizeHint () {

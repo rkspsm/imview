@@ -246,10 +246,13 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
   bnf1->setSingleShot (false) ;
   bnf2->setSingleShot (true) ;
 
+  const int s_time = 500 ;
+  const int l_time = 1500 ;
+
   connect (bnf1, &QTimer::timeout,
     [this] () {
       app->on_nextImage () ;
-      bnf2->start (400) ;
+      bnf2->start (s_time) ;
     }) ;
 
   connect (bnf2, &QTimer::timeout,
@@ -261,7 +264,7 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
     [this] (int state) {
       if (state == Qt::Checked) {
         bnf2->stop () ;
-        bnf1->start (1200) ;
+        bnf1->start (l_time) ;
       } else {
         bnf1->stop () ;
         if (bnf2->remainingTime () != -1) {

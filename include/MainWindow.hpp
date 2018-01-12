@@ -15,6 +15,9 @@ class MainWindow : public QMainWindow {
   MainWindow () ;
   ~MainWindow () ;
 
+  int s_time ;
+  int l_time ;
+
   virtual QSize sizeHint () ;
   virtual QSizePolicy sizePolicy () ;
   virtual void resizeEvent (QResizeEvent * evt) ;

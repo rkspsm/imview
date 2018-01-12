@@ -27,6 +27,10 @@ MainWindow::~MainWindow () { }
 
 MainWindow::MainWindow () : QMainWindow (nullptr) {
   resize (sizeHint ()) ;
+
+  s_time = 350 ;
+  l_time = 900 ;
+
   auto gview = new GraphicsView (this) ;
   setCentralWidget (gview) ;
 
@@ -246,9 +250,6 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
   bnf1->setSingleShot (false) ;
   bnf2->setSingleShot (true) ;
 
-  const int s_time = 500 ;
-  const int l_time = 1500 ;
-
   connect (bnf1, &QTimer::timeout,
     [this] () {
       app->on_nextImage () ;
@@ -273,6 +274,42 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
         bnf2->stop () ;
       }
     }) ;
+
+  auto incBFTimeAction = activitiesMenu->addAction (tr ("Increase Back-n-Forth Time")) ;
+  incBFTimeAction->setShortcut (QKeySequence (Qt::Key_K)) ;
+  auto decBFTimeAction = activitiesMenu->addAction (tr ("Decrease Back-n-Forth Time")) ;
+  decBFTimeAction->setShortcut (QKeySequence (Qt::Key_J)) ;
+
+  auto reset_back_n_forth = [this] () {
+    if (back_n_forth->isChecked ()) {
+      bnf1->stop () ;
+      if (bnf2->remainingTime () != -1) {
+        app->on_prevImage () ;
+      }
+      bnf2->stop () ;
+
+      bnf1->start (l_time) ;
+    }
+  } ;
+
+  connect (incBFTimeAction, &QAction::triggered,
+    [this, reset_back_n_forth] () {
+      s_time += 50 ;
+      l_time += 150 ;
+      reset_back_n_forth () ;
+      statusBar ()->showMessage (QString ("%1 / %2").arg (s_time).arg (l_time)) ;
+    }) ;
+
+  connect (decBFTimeAction, &QAction::triggered,
+    [this, reset_back_n_forth] () {
+      if (s_time > 350) {
+        s_time -= 50 ;
+        l_time -= 150 ;
+        reset_back_n_forth () ;
+      }
+      statusBar ()->showMessage (QString ("%1 / %2").arg (s_time).arg (l_time)) ;
+    }) ;
+
 
   setWindowTitle ("ImView-II") ;
 

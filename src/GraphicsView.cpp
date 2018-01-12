@@ -94,12 +94,15 @@ GraphicsView::GraphicsView (QWidget* parent)
 void GraphicsView::context_refresh (Application::Context::Ptr ctx) {
   if (img_item) {
     scene->removeItem (img_item) ;
+    delete img_item ;
     img_item = nullptr ;
     rotscale_item->setScale (1) ;
     rotscale_item->setRotation (0) ;
 
     if (img_mirrored_item) {
       scene->removeItem (img_mirrored_item) ;
+      delete img_mirrored_item ;
+      img_mirrored_item = nullptr ;
     }
   }
 

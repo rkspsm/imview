@@ -3,6 +3,7 @@
 #include <QGraphicsView>
 #include <QSharedPointer>
 #include <QGraphicsPixmapItem>
+#include <QPixmap>
 
 class GraphicsView : public QGraphicsView {
 

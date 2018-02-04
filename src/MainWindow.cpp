@@ -138,6 +138,7 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
   auto snr_22_5 = new QRadioButton ("22.5") ;
   auto snr_30 = new QRadioButton ("30") ;
   auto snr_45 = new QRadioButton ("45") ;
+  auto snr_120 = new QRadioButton ("120") ;
 
   auto snr_group = new QButtonGroup (this) ;
   snr_group->addButton (snr_normal, 0) ;
@@ -145,12 +146,14 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
   snr_group->addButton (snr_22_5, 225) ;
   snr_group->addButton (snr_30, 30) ;
   snr_group->addButton (snr_45, 45) ;
+  snr_group->addButton (snr_120, 120) ;
 
   smartNavigationToolbar->addWidget (snr_normal) ;
   smartNavigationToolbar->addWidget (snr_15) ;
   smartNavigationToolbar->addWidget (snr_22_5) ;
   smartNavigationToolbar->addWidget (snr_30) ;
   smartNavigationToolbar->addWidget (snr_45) ;
+  smartNavigationToolbar->addWidget (snr_120) ;
 
   auto nextImageAction = activitiesMenu->addAction (tr ("Next Image")) ;
   nextImageAction->setShortcut (QKeySequence (tr("d"))) ;

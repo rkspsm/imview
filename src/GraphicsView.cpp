@@ -170,3 +170,21 @@ void GraphicsView::mouseMoveEvent (QMouseEvent* evt) {
   app->drag (evt->x (), evt->y ()) ;
 }
 
+void GraphicsView::wheelEvent (QWheelEvent* evt) {
+  evt->accept () ;
+}
+
+void GraphicsView::keyPressEvent (QKeyEvent* evt) {
+  switch (evt->key ()) {
+    case Qt::Key_Right :
+    case Qt::Key_Left :
+    case Qt::Key_Up :
+    case Qt::Key_Down :
+      evt->accept () ;
+      return ;
+    default :
+      evt->ignore () ;
+      return ;
+  }
+}
+

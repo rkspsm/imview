@@ -62,6 +62,8 @@ int stepmode_to_int (Application::StepMode mode) {
       return 30 ;
     case Application::StepMode::sm_45 :
       return 45 ;
+    case Application::StepMode::sm_120 :
+      return 120 ;
     default :
       return -1 ;
   }
@@ -79,6 +81,8 @@ Application::StepMode int_to_stepmode (int iMode) {
       return Application::StepMode::sm_30 ;
     case 45 :
       return Application::StepMode::sm_45 ;
+    case 120 :
+      return Application::StepMode::sm_120 ;
     default :
       return Application::StepMode::sm_Normal ;
   }
@@ -262,6 +266,8 @@ double mode_value (Application::StepMode mode) {
       return 30.0f ;
     case SM::sm_45 :
       return 45.0f ;
+    case SM::sm_120 :
+      return 120.0f ;
     default :
       return 360.0f ;
   }

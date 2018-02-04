@@ -25,7 +25,8 @@ class Application : public QApplication {
     sm_15,
     sm_22_5,
     sm_30,
-    sm_45
+    sm_45,
+    sm_120
   } ;
 
   class ImageState {

@@ -3,7 +3,8 @@
 #include <QGraphicsView>
 #include <QSharedPointer>
 #include <QGraphicsPixmapItem>
-#include <QPixmap>
+#include <QWheelEvent>
+#include <QKeyEvent>
 
 class GraphicsView : public QGraphicsView {
 
@@ -19,6 +20,8 @@ class GraphicsView : public QGraphicsView {
   virtual void mousePressEvent (QMouseEvent* evt) ;
   virtual void mouseReleaseEvent (QMouseEvent* evt) ;
   virtual void mouseMoveEvent (QMouseEvent* evt) ;
+  virtual void wheelEvent (QWheelEvent* evt) ;
+  virtual void keyPressEvent (QKeyEvent* evt) ;
 
   QSharedPointer<QGraphicsScene> scene ;
   QGraphicsPixmapItem *img_item ;

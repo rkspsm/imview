@@ -171,15 +171,27 @@ void GraphicsView::mouseMoveEvent (QMouseEvent* evt) {
 }
 
 void GraphicsView::wheelEvent (QWheelEvent* evt) {
+  auto dpos = evt->angleDelta () / 4 ;
+  app->push_translate (dpos.x (), dpos.y ()) ;
   evt->accept () ;
 }
 
 void GraphicsView::keyPressEvent (QKeyEvent* evt) {
   switch (evt->key ()) {
     case Qt::Key_Right :
+      app->push_translate (-20, 0) ;
+      evt->accept () ;
+      return ;
     case Qt::Key_Left :
+      app->push_translate (20, 0) ;
+      evt->accept () ;
+      return ;
     case Qt::Key_Up :
+      app->push_translate (0, 20) ;
+      evt->accept () ;
+      return ;
     case Qt::Key_Down :
+      app->push_translate (0, -20) ;
       evt->accept () ;
       return ;
     default :

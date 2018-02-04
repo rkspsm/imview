@@ -88,6 +88,7 @@ class Application : public QApplication {
   void scale_grab (double x, double y) ;
   void scale_ungrab (double x, double y) ;
   void drag (double x, double y) ;
+  void push_translate (double x, double y) ;
 
   void on_resize () ;
   void on_rotation (double value) ;

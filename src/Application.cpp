@@ -460,6 +460,14 @@ void Application::drag (double x2, double y2) {
   }
 }
 
+void Application::push_translate (double x, double y) {
+  if (current_state) {
+    if ( (not move_grabbed) and (not scale_grabbed)) {
+      emit img_translate (x, y) ;
+    }
+  }
+}
+
 void Application::on_context_selection (QUuid id) {
   Context::Ptr target = nullptr ;
   for (int i = 0 ; i < all_contexts.size () ; i++) {

@@ -17,6 +17,7 @@
 #include <QStackedLayout>
 #include <QInputDialog>
 #include <QStatusBar>
+#include <QPushButton>
 
 using std::cerr ;
 using std::endl ;
@@ -238,6 +239,16 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
           [ctx] () { app->on_context_selection (ctx->id); }) ;
       }
     }) ;
+
+  auto sbPrev = new QPushButton ("Prev") ;
+  statusBar ()->addPermanentWidget (sbPrev) ;
+  connect (sbPrev, &QPushButton::clicked,
+      [] () { app->on_prevImage () ; }) ;
+
+  auto sbNext = new QPushButton ("Next") ;
+  statusBar ()->addPermanentWidget (sbNext) ;
+  connect (sbNext, &QPushButton::clicked,
+      [] () { app->on_nextImage () ; }) ;
 
   autosave = new QCheckBox ("Autosave ?", statusBar ()) ;
   autosave->setChecked (false) ;

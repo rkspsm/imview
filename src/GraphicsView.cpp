@@ -2,6 +2,7 @@
 #include "GraphicsView.hpp"
 
 #include <QGraphicsScene>
+#include <QRadialGradient>
 
 #include <iostream>
 
@@ -27,7 +28,9 @@ GraphicsView::GraphicsView (QWidget* parent)
   setScene (scene.data ()) ;
 
   scene->setSceneRect (QRectF (0, 0, 20000, 20000)) ;
-  scene->setBackgroundBrush (Qt::Dense5Pattern) ;
+
+  scene->setBackgroundBrush (QBrush (Qt::black)) ;
+
   centerOn (10000, 10000) ;
 
   setAlignment (Qt::AlignLeft | Qt::AlignTop) ;

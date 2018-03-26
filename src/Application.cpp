@@ -5,15 +5,20 @@
 #include <QSqlError>
 #include <QSetIterator>
 #include <QTimer>
+#include <QSocketNotifier>
 
 #include <QtMath>
 #include <cmath>
 
+#include <cstdio>
 #include <iostream>
+#include <string>
 
 using std::cerr ;
 using std::endl ;
 using std::fmod ;
+using std::cin ;
+using std::string ;
 
 std::ostream& operator << (std::ostream & out, const QPoint & x) {
   out << "(" << x.x () << ", " << x.y () << ")" ;
@@ -46,6 +51,19 @@ Application::Application (int & argc, char ** &argv)
   setApplicationName ("rks_art_imview_2") ;
   setOrganizationName ("rks_home") ;
   setOrganizationDomain ("art.rks.ravi039.net") ;
+
+  auto sn = new QSocketNotifier (fileno (stdin), QSocketNotifier::Read, this) ;
+
+  connect (sn, &QSocketNotifier::activated,
+      [this, sn] (int fd) {
+        string line ;
+        if (cin.eof () or cin.fail ()) {
+          sn->setEnabled (false) ;
+          return ;
+        }
+        std::getline (cin, line) ;
+        emit cmdline (QString::fromStdString (line)) ;
+      }) ;
 
   //dbg () ;
 }

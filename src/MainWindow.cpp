@@ -18,6 +18,9 @@
 #include <QInputDialog>
 #include <QStatusBar>
 #include <QPushButton>
+#include <QStringList>
+#include <QRegExp>
+#include <QDebug>
 
 using std::cerr ;
 using std::endl ;
@@ -48,6 +51,14 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
         app->dir_selected (QDir (dir)) ;
       }
     }) ;
+
+  connect (app, &Application::cmdline,
+      [] (const QString & line) {
+        if (line.startsWith ("newdir ")) {
+          QDir dir (line.mid (7)) ;
+          app->dir_selected (dir) ;
+        }
+      }) ;
 
   auto saveAction = fileMenu->addAction (tr("&Save")) ;
   saveAction->setShortcut (QKeySequence (tr("ctrl+s"))) ;

@@ -6,6 +6,7 @@
 #include <QHash>
 #include <QSet>
 #include <QWidget>
+#include <QString>
 
 #include <iostream>
 
@@ -122,6 +123,7 @@ class Application : public QApplication {
   void img_scale (double scale) ;
   void img_mirror (bool value) ;
   void resized () ;
+  void cmdline (const QString &line) ;
 
   public slots :
   void on_startup () ;

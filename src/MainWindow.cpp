@@ -45,7 +45,7 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
     [this] () {
       auto dir = QFileDialog::getExistingDirectory (
         this, tr("Select Image Folder"), ".",
-        QFileDialog::ShowDirsOnly | QFileDialog::DontUseNativeDialog ) ;
+        QFileDialog::ShowDirsOnly) ;
 
       if (dir.size () > 0) {
         app->dir_selected (QDir (dir)) ;
@@ -335,6 +335,11 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
       statusBar ()->showMessage (QString ("%1 / %2").arg (s_time).arg (l_time)) ;
     }) ;
 
+  auto setSameTransform = activitiesMenu->addAction (tr ("Transform others")) ;
+  connect (setSameTransform, &QAction::triggered,
+    [] () {
+      app->on_transform_others () ;
+    }) ;
 
   setWindowTitle ("ImView-II") ;
 

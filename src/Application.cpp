@@ -35,6 +35,11 @@ std::ostream& operator << (std::ostream & out, const QString & x) {
   return out ;
 }
 
+std::ostream& operator << (std::ostream & out, const Application::ImageState& state) {
+  out << "(" << state.x << ", " << state.y << ", " << state.z << ", " << state.rot << ")" ;
+  return out ;
+}
+
 Application::~Application () { }
 
 //void dbg () ;
@@ -343,6 +348,7 @@ void Application::on_nextImage () {
     } else if (current_context->step_image_index (1)) {
       state_refreshed (true) ;
       emit current_img_changed (current_context) ;
+      //dump_cur_state () ;
       state_refreshed () ;
       state_is_dirty () ;
       return ;
@@ -375,6 +381,7 @@ void Application::on_prevImage () {
         current_state->mirrored = true ;
       }
       emit current_img_changed (current_context) ;
+      //dump_cur_state () ;
       state_refreshed () ;
       state_is_dirty () ;
       return ;
@@ -564,6 +571,41 @@ void Application::on_context_wide_rot_mirror (double rot, bool mirror) {
 
       state->rot = rot ;
       state->mirrored = mirror ;
+
+      state_is_dirty (i) ;
+    }
+
+    state_refreshed () ;
+  }
+}
+
+void Application::on_transform_others () {
+  if (current_context) {
+    auto ctx = current_context ;
+
+    auto cur_index = ctx->current_image_index ;
+    ImageState::Ptr cur_state ;
+    if (ctx->states.contains (cur_index)) {
+      cur_state = ctx->states[cur_index] ;
+    } else {
+      cur_state = ImageState::Ptr::create () ;
+    }
+
+    for (int i = 0 ; i < ctx->images.size () ; i++) {
+      ImageState::Ptr state ;
+      if (ctx->states.contains (i)) {
+        state = ctx->states[i] ;
+      } else {
+        state = ImageState::Ptr::create () ;
+        ctx->states[i] = state ;
+      }
+
+      // setup state->rot, state->mirrored, etc
+      state->x = cur_state->x ;
+      state->y = cur_state->y ;
+      state->z = cur_state->z ;
+      state->rot = cur_state->rot ;
+      state->pristine = false ;
 
       state_is_dirty (i) ;
     }
@@ -897,6 +939,23 @@ int Application::exec (QWidget * widget) {
       widget->show () ;
       return QApplication::exec () ;
     }
+  }
+}
+
+void
+Application::dump_cur_state () {
+  if (current_context) {
+    auto ctx = current_context ;
+    auto cur_index = ctx->current_image_index ;
+
+    ImageState::Ptr state ;
+    if (ctx->states.contains (cur_index)) {
+      state = ctx->states[cur_index] ;
+    } else {
+      state = ImageState::Ptr::create () ;
+    }
+
+    cerr << "index = " << cur_index << ", state = " << (*state) << endl ;
   }
 }
 

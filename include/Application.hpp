@@ -105,6 +105,7 @@ class Application : public QApplication {
   void on_context_selection (QUuid id) ;
   void on_context_deletion (QUuid id) ;
   void on_context_wide_rot_mirror (double rot, bool mirror) ;
+  void on_transform_others () ;
 
   void flush_to_db () ;
   bool read_from_db () ;
@@ -127,6 +128,9 @@ class Application : public QApplication {
 
   public slots :
   void on_startup () ;
+
+  private :
+  void dump_cur_state () ;
 } ;
 
 #define app static_cast<Application*> (qApp)

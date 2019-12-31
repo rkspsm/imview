@@ -3,6 +3,7 @@
 
 #include <QGraphicsScene>
 #include <QRadialGradient>
+#include <QClipboard>
 
 #include <iostream>
 
@@ -23,6 +24,10 @@ GraphicsView::GraphicsView (QWidget* parent)
 
   setHorizontalScrollBarPolicy (Qt::ScrollBarAlwaysOff) ;
   setVerticalScrollBarPolicy (Qt::ScrollBarAlwaysOff) ;
+
+  setRenderHints(
+      QPainter::Antialiasing |
+      QPainter::SmoothPixmapTransform);
 
   scene = QSharedPointer<QGraphicsScene>::create () ;
   setScene (scene.data ()) ;
@@ -67,6 +72,18 @@ GraphicsView::GraphicsView (QWidget* parent)
         img_mirrored_item->setPos (x, y) ;
       }
     }) ;
+
+  connect(app, &Application::img_copy,
+      [this]() {
+        if(img_item) {
+          copied_image = img_item->pixmap().toImage();
+          if(not copied_image.isNull()) {
+            auto clipboard = QGuiApplication::clipboard();
+            clipboard->setImage(copied_image);
+            app->show_status_bar_msg("copied...");
+          }
+        }
+      });
 
   connect (app, &Application::img_scale,
     [this] (double scale) {
@@ -124,6 +141,8 @@ void GraphicsView::context_refresh (Application::Context::Ptr ctx) {
 
     img_item = new QGraphicsPixmapItem (pix, rotscale_item) ;
     img_mirrored_item = new QGraphicsPixmapItem (pix_mirrored, rotscale_item) ;
+    img_item->setTransformationMode(Qt::SmoothTransformation);
+    img_mirrored_item->setTransformationMode(Qt::SmoothTransformation);
     //img_item = scene->addPixmap (img_file) ;
     auto size = img_item->boundingRect () ;
 

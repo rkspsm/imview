@@ -52,6 +52,13 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
       }
     }) ;
 
+  auto copyAction = fileMenu->addAction(tr("&Copy"));
+  copyAction->setShortcut(QKeySequence(tr("ctrl+c")));
+  connect(copyAction, &QAction::triggered,
+      []() {
+      app->copy_current();
+      });
+
   connect (app, &Application::cmdline,
       [] (const QString & line) {
         if (line.startsWith ("newdir ")) {
@@ -86,6 +93,17 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
         app->on_context_deletion (app->current_context->id) ;
       }
     }) ;
+
+  auto refreshAction = fileMenu->addAction(tr("Refresh"));
+  connect(refreshAction, &QAction::triggered,
+    [](){
+      auto ctx = app->current_context;
+      if(ctx) {
+        auto dir = ctx->dir;
+        app->on_context_deletion(ctx->id);
+        app->dir_selected(dir);
+      }
+    });
 
   auto quitAction = fileMenu->addAction (tr("&Quit")) ;
   connect (quitAction, &QAction::triggered, [] () { app->quit (); }) ;
@@ -360,6 +378,11 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
         .arg (i)
         .arg (t)) ;
     }) ;
+
+  connect(app, &Application::status_bar_msg,
+      [this](const QString &msg) {
+        statusBar()->showMessage(msg, 2000);
+      });
 }
 
 QSize MainWindow::sizeHint () {

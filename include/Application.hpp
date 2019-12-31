@@ -90,6 +90,7 @@ class Application : public QApplication {
   void scale_ungrab (double x, double y) ;
   void drag (double x, double y) ;
   void push_translate (double x, double y) ;
+  void copy_current();
 
   void on_resize () ;
   void on_rotation (double value) ;
@@ -113,6 +114,8 @@ class Application : public QApplication {
   void context_is_dirty (Context::Ptr ctx = nullptr) ;
   void state_is_dirty (int index = -1) ;
 
+  void show_status_bar_msg(const QString &msg);
+
   signals:
 
   void all_contexts_changed (Context::List all_contexts) ;
@@ -125,6 +128,8 @@ class Application : public QApplication {
   void img_mirror (bool value) ;
   void resized () ;
   void cmdline (const QString &line) ;
+  void img_copy();
+  void status_bar_msg(const QString &msg);
 
   public slots :
   void on_startup () ;

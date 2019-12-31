@@ -254,6 +254,10 @@ void Application::move_ungrab (double x, double y) {
   state_is_dirty () ;
 }
 
+void Application::show_status_bar_msg(const QString &msg) {
+  emit status_bar_msg(msg);
+}
+
 void Application::scale_grab (double x, double y) {
   x1 = grab_x = x ; 
   y1 = grab_y = y ;
@@ -612,6 +616,10 @@ void Application::on_transform_others () {
 
     state_refreshed () ;
   }
+}
+
+void Application::copy_current() {
+  emit img_copy();
 }
 
 void Application::context_is_dirty (Context::Ptr ctx) {

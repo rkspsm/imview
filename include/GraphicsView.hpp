@@ -27,6 +27,7 @@ class GraphicsView : public QGraphicsView {
   QGraphicsPixmapItem *img_item ;
   QGraphicsPixmapItem *img_mirrored_item ;
   QGraphicsItem *rotscale_item ;
+  QImage copied_image;
 
   public slots :
   void context_refresh (Application::Context::Ptr context) ;

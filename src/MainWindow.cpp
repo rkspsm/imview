@@ -151,6 +151,7 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
   toolbar->addSeparator () ;
   auto mirrorToggleAction = toolbar->addAction ("Mirror") ;
   mirrorToggleAction->setCheckable (true) ;
+  mirrorToggleAction->setShortcut(QKeySequence(tr("tab")));
   connect (mirrorToggleAction, &QAction::triggered,
     [] (bool checked) { app->on_mirrorToggle () ; }) ;
   connect (app, &Application::img_mirror,

@@ -281,7 +281,7 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
       [] () { app->on_nextImage () ; }) ;
 
   autosave = new QCheckBox ("Autosave ?", statusBar ()) ;
-  autosave->setChecked (false) ;
+  autosave->setChecked (true) ;
   statusBar ()->addPermanentWidget (autosave) ;
 
   back_n_forth = new QCheckBox ("Back-n-Forth ?", statusBar ()) ;
@@ -387,7 +387,7 @@ MainWindow::MainWindow () : QMainWindow (nullptr) {
 }
 
 QSize MainWindow::sizeHint () {
-  return QSize (1024, 768) ;
+  return QSize (512, 581) ;
 }
 
 QSizePolicy MainWindow::sizePolicy () {

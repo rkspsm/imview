@@ -944,7 +944,9 @@ int Application::exec (QWidget * widget) {
       timer->setInterval (0) ;
       connect (timer, &QTimer::timeout, this, &Application::on_startup) ;
       timer->start () ;
+      widget->setWindowFlag(Qt::WindowStaysOnTopHint);
       widget->show () ;
+      widget->move(3, 107);
       return QApplication::exec () ;
     }
   }
